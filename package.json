@@ -1,7 +1,7 @@
 {
-  "name": "JavaDebug",
+  "name": "javadebugger",
   "displayName": "Java Debugger",
-  "description": "Java Debugger (break points, variables, etc)",
+  "description": "Java Debugger (break points, variables, stack trace etc)",
   "version": "0.0.1",
   "publisher": "donjayamanne",
   "engines": {

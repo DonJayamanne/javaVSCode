@@ -36,13 +36,13 @@
             "runtimeArgs": [
                 "--harmony"
             ],
-            "program": "${workspaceRoot}/out/client/debugger/main.js",
+            "program": "${workspaceRoot}/out/client/main.js",
             "stopOnEntry": false,
             "args": [
                 "--server=4711"
             ],
             "sourceMaps": true,
-            "cwd": "${workspaceRoot}"
+            "cwd": "${workspaceRoot}/out/client"
         }
     ]
 }

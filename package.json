@@ -8,11 +8,21 @@
     "vscode": "^1.0.0"
   },
   "categories": [
-    "Linters"
+    "Linters", "Debuggers"
   ],
   "activationEvents": [
     "onLanguage:java"
   ],
+  "license": "SEE LICENSE IN LICENSE or README.MD",
+  "homepage": "https://github.com/DonJayamanne/javaVSCode/blob/master/README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DonJayamanne/javaVSCode"
+  },
+  "bugs": {
+    "url": "https://github.com/DonJayamanne/javaVSCode/issues"
+  },
+  "icon": "images/icon.png",
   "main": "./out/client/extension",
   "contributes": {
     "debuggers": [

@@ -1,0 +1,163 @@
+{
+  "name": "java",
+  "displayName": "java",
+  "description": "Java Linter and Debugger (break points, variables, etc)",
+  "version": "0.0.1",
+  "publisher": "donjayamanne",
+  "engines": {
+    "vscode": "^1.0.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:java"
+  ],
+  "main": "./out/client/extension",
+  "contributes": {
+    "debuggers": [
+      {
+        "type": "java",
+        "label": "Java",
+        "enableBreakpointsFor": {
+          "languageIds": [
+            "java"
+          ]
+        },
+        "program": "./out/client/debugger/main.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program",
+              "jdkPath"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to the program.",
+                "default": "${file}"
+              },
+              "jdkPath": {
+                "type": "string",
+                "description": "Path JDK directory.",
+                "default": ""
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": true
+              },
+              "externalConsole": {
+                "type": "boolean",
+                "description": "Launch debug target in external console window.",
+                "default": false
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [
+                  "-classpath",
+                  "\"${workspaceRoot};${java.class.path}\""
+                ],
+                "description": "Options to be passed to the java executable (java)."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "name": "Java",
+            "type": "java",
+            "request": "launch",
+            "stopOnEntry": true,
+            "program": "${file}",
+            "options": [
+              "-classpath",
+              "\"${workspaceRoot};${java.class.path}\""
+            ]
+          },
+          {
+            "name": "Java Console App",
+            "type": "java",
+            "request": "launch",
+            "stopOnEntry": true,
+            "program": "${file}",
+            "externalConsole": true,
+            "debugOptions": [
+              "WaitOnAbnormalExit",
+              "WaitOnNormalExit"
+            ],
+            "options": [
+              "-classpath",
+              "\"${workspaceRoot};${java.class.path}\""
+            ]
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Java Configuration",
+      "properties": {
+        "java.jdkPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to JDK director (can be empty), you can use a custom version of Java by modifying this setting to include the full path."
+        },
+        "java.devOptions": {
+          "type": "array",
+          "default": [],
+          "description": "Advanced options used to enable new features or produce detailed diagnostics to identify extension issues."
+        },
+        "java.linting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to lint Java files."
+        },
+        "java.linting.maxNumberOfProblems": {
+          "type": "number",
+          "default": 100,
+          "description": "Controls the maximum number of problems produced by the server."
+        },
+        "java.compiler.files": {
+          "type": "array",
+          "default": [
+            "${file}"
+          ],
+          "description": "Files to compile. [] = Empty array will result in all workspace files being compiled. [${file}] will result in current file being compiled. Else provide a list of files to be compiled (relative paths will work)."
+        },
+        "java.compiler.options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "-g",
+            "-classpath",
+            "\"${workspaceRoot};${java.class.path}\"",
+            "-Xlint:all"
+          ],
+          "description": "Options to be passed to the Java compiler (javac)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+    "compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "devDependencies": {
+    "typescript": "^1.8.5",
+    "vscode": "^0.11.0"
+  },
+  "dependencies": {
+    "line-by-line": "^0.1.4",
+    "get-port": "^2.1.0",
+    "vscode-debugadapter": "^1.8.0",
+    "vscode-debugprotocol": "^1.8.0"
+  }
+}

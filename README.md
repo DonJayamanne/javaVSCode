@@ -1,36 +1,36 @@
-# Java
-Linting and Debugging (Local variables, arguments, step through, etc).
+# Java Debugger
+Local variables, arguments, stack trace, step through, partial support for JavaFX, expanding values (Objects, Arrays) etc.
 
-Once installed, do remember to configure the JDK Path (both in settings and launch.json, else jdk path is assumed to be in the current path)
+Once installed, do remember to configure the JDK Path (in launch.json, else jdk path is assumed to be in the current path)
+Ensure to compile the source code with debug symbols.
 
-##Features
-* Linting (uses the Java Compiler to identify issues. Errors are identifed upon saving changes)
-* Debugging with support for local variables, arguments, stack information, break points
- + Still requires a lot of work (doesn't support multi threaded programs, JavaFX is partially supported)
- 
+E.g. configure the tasks.json file as follows and use run the build task.
+(note: if there are no errors displayed in the 'Tasks' output window, then there are no errors)
+```json
+{
+    "version": "0.1.0",
+    "command": "javac",
+    "isShellCommand": true,
+    "showOutput": "always",
+    "isWatching": true,
+    "suppressTaskName": true,
+    "tasks": [
+        {
+            "taskName": "build",
+            "args": ["-g", "${file}"]
+        }
+    ]
+}
+```
+
 ##[Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
-* Enhancements to java debugger (pause and continue, remove break points, multiple threads, JavaFX, etc)
-* Support for configuration of compiler settings
-* Snippets
-
-## Feature Details
-* Linting
- + Java Compiler API is used to identify issues upon saving changes
- + (ensure the settings file is configured to point to the jdk path)
-* Debuggging
- + Step through code (Step in, Step out, Continue)
- + Add break points
- + (missing debugging features coming soon, such as watch window, etc)
- + (ensure the launch.json file is configured to point to the jdk path)
-
-![Image of Linting](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/linter.gif)
+* Enhancements to java debugger (pause and continue, remove break points, multiple threads, JavaFX, watch window, evaluating expressions, etc)
 
 ![Image of Debugging](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/debug.gif)
 
 ## Requirements
 * JDK is installed (version 1.7.0 and later)
- + Path to jdk is configured in settings (for linting)
- + Path to jdk is configured in launch.json (for debugging)
+ + Path to jdk is configured in launch.json
 
 ## Source
 

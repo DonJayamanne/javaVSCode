@@ -8,8 +8,8 @@ import * as child_process from 'child_process';
 import * as StringDecoder from 'string_decoder';
 import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles} from 'vscode-debugadapter';
 const getport = require("get-port");
-import {LaunchRequestArguments} from './Common/contracts';
-import {open} from '../common/open';
+import {LaunchRequestArguments} from './common/contracts';
+import {open} from './common/open';
 
 export const MAIN_THREAD_ID = 1;
 export const MAIN_THREAD_NAME = "main";

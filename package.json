@@ -1,18 +1,16 @@
 {
-  "name": "java",
-  "displayName": "java",
-  "description": "Java Linter and Debugger (break points, variables, etc)",
+  "name": "JavaDebug",
+  "displayName": "Java Debugger",
+  "description": "Java Debugger (break points, variables, etc)",
   "version": "0.0.1",
   "publisher": "donjayamanne",
   "engines": {
     "vscode": "^1.0.0"
   },
   "categories": [
-    "Linters", "Debuggers"
+    "Debuggers"
   ],
-  "activationEvents": [
-    "onLanguage:java"
-  ],
+  "activationEvents": [],
   "license": "SEE LICENSE IN LICENSE or README.MD",
   "homepage": "https://github.com/DonJayamanne/javaVSCode/blob/master/README.md",
   "repository": {
@@ -94,53 +92,7 @@
           }
         ]
       }
-    ],
-    "configuration": {
-      "type": "object",
-      "title": "Java Configuration",
-      "properties": {
-        "java.jdkPath": {
-          "type": "string",
-          "default": "",
-          "description": "Path to JDK director (can be empty), you can use a custom version of Java by modifying this setting to include the full path."
-        },
-        "java.devOptions": {
-          "type": "array",
-          "default": [],
-          "description": "Advanced options used to enable new features or produce detailed diagnostics to identify extension issues."
-        },
-        "java.linting.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to lint Java files."
-        },
-        "java.linting.maxNumberOfProblems": {
-          "type": "number",
-          "default": 100,
-          "description": "Controls the maximum number of problems produced by the server."
-        },
-        "java.compiler.files": {
-          "type": "array",
-          "default": [
-            "${file}"
-          ],
-          "description": "Files to compile. [] = Empty array will result in all workspace files being compiled. [${file}] will result in current file being compiled. Else provide a list of files to be compiled (relative paths will work)."
-        },
-        "java.compiler.options": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            "-g",
-            "-classpath",
-            "\"${workspaceRoot}\"",
-            "-Xlint:all"
-          ],
-          "description": "Options to be passed to the Java compiler (javac)."
-        }
-      }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "node ./node_modules/vscode/bin/compile",

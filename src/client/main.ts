@@ -7,7 +7,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
 import {JdbRunner, MAIN_THREAD_ID, MAIN_THREAD_NAME} from './jdb';
-import {LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThread, JavaEvaluationResultFlags, IDebugVariable, ICommand, IStackInfo} from './Common/contracts';
+import {LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThread, JavaEvaluationResultFlags, IDebugVariable, ICommand, IStackInfo} from './common/contracts';
 
 interface ICommandToExecute {
     name: string

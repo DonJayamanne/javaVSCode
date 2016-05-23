@@ -58,10 +58,7 @@
                 "items": {
                   "type": "string"
                 },
-                "default": [
-                  "-classpath",
-                  "\"${workspaceRoot};${java.class.path}\""
-                ],
+                "default": [],
                 "description": "Options to be passed to the java executable (java)."
               }
             }
@@ -74,10 +71,7 @@
             "request": "launch",
             "stopOnEntry": true,
             "program": "${file}",
-            "options": [
-              "-classpath",
-              "\"${workspaceRoot};${java.class.path}\""
-            ]
+            "options": []
           },
           {
             "name": "Java Console App",
@@ -86,14 +80,7 @@
             "stopOnEntry": true,
             "program": "${file}",
             "externalConsole": true,
-            "debugOptions": [
-              "WaitOnAbnormalExit",
-              "WaitOnNormalExit"
-            ],
-            "options": [
-              "-classpath",
-              "\"${workspaceRoot};${java.class.path}\""
-            ]
+            "options": []
           }
         ]
       }
@@ -137,7 +124,7 @@
           "default": [
             "-g",
             "-classpath",
-            "\"${workspaceRoot};${java.class.path}\"",
+            "\"${workspaceRoot}\"",
             "-Xlint:all"
           ],
           "description": "Options to be passed to the Java compiler (javac)."

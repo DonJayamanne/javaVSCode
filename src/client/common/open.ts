@@ -1,7 +1,7 @@
 'use strict';
 
 //https://github.com/sindresorhus/opn/blob/master/index.js
-//Modified as this uses target as an argument & to make it work in a mac
+//Modified as this uses target as an argument
 
 import * as path from 'path';
 import * as childProcess from 'child_process';
@@ -29,20 +29,11 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
     }
 
     if (process.platform === 'darwin') {
-        cmd = 'open';
-
-        if (opts.wait) {
-            args.push('-W');
-        }
-
-        if (opts.app) {
-            args.push('-a', opts.app);
-        }
-
-        if (appArgs.length > 0) {
-            args.push('--args');
-            args = args.concat(appArgs);
-        }
+        cmd = 'osascript';
+        args = [ '-e', 'tell application "terminal"',
+                '-e', 'do script "' + [opts.app].concat(appArgs).join(" ") + '"',
+                '-e', 'end tell' ];
+        
     } else if (process.platform === 'win32') {
         cmd = 'cmd';
         args.push('/c', 'start');

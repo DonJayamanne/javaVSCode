@@ -5,10 +5,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export interface IJavaSettings {
-    jdkPath: string;
-    devOptions: any[];
-    linting: ILintingSettings;
-    compiler: ICompilerSettings;
+    jdkPath?: string;
+    devOptions?: any[];
+    linting?: ILintingSettings;
+    compiler?: ICompilerSettings;
 }
 export interface ILintingSettings {
     enabled: boolean;
@@ -28,17 +28,10 @@ export class JavaSettings implements IJavaSettings {
     }
     private initializeSettings() {
         var javaSettings = vscode.workspace.getConfiguration("java");
-        this.jdkPath = javaSettings.get<string>("jdkPath");
-        this.devOptions = javaSettings.get<any[]>("devOptions");
+        this.jdkPath = javaSettings.get<string>("jdkPath");        
+        this.devOptions = javaSettings.get<any[]>("devOptions");        
         this.compiler = javaSettings.get<ICompilerSettings>("compiler");
-        this.devOptions = Array.isArray(this.devOptions) ? this.devOptions : [];
-        var lintingSettings = javaSettings.get<ILintingSettings>("linting");
-        if (this.linting) {
-            Object.assign<ILintingSettings, ILintingSettings>(this.linting, lintingSettings);
-        }
-        else {
-            this.linting = lintingSettings;
-        }
+        this.linting = javaSettings.get<ILintingSettings>("linting");
     }
 
     public jdkPath: string;

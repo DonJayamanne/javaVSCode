@@ -87,7 +87,7 @@ export class Linter {
 
     private compilerStarted: Promise<any>;
     public runLinter(filePath: string, document: TextDocument): Promise<ILintMessage[]> {
-        if (!this.javaSettings.linting.enabled) {
+        if (this.javaSettings.linting && !this.javaSettings.linting.enabled) {
             return Promise.resolve([]);
         }
 

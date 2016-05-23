@@ -8,7 +8,7 @@ class Logger {
     static initializeChannel() {
         if (javaSettings) return;
         javaSettings = new settings.JavaSettings();
-        if (javaSettings.devOptions.indexOf("DEBUG") >= 0) {
+        if (javaSettings.devOptions && javaSettings.devOptions.indexOf("DEBUG") >= 0) {
             outChannel = vscode.window.createOutputChannel('Java');
         }
     }

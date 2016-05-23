@@ -9,11 +9,13 @@ import * as StringDecoder from 'string_decoder';
 import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles} from 'vscode-debugadapter';
 const getport = require("get-port");
 import {LaunchRequestArguments} from './Common/contracts';
+import {open} from '../common/open';
 
 export const MAIN_THREAD_ID = 1;
 export const MAIN_THREAD_NAME = "main";
 const MAIN_THREAD_PREFIX = "main[1]";
 const JAVA_FX_THREAD_NAME = "JavaFX Application Thread";
+const JAVA_APPLICATION_EXITED = "The application exited";
 
 interface IJdbRunnerCommand {
     commandLine: string
@@ -59,8 +61,21 @@ export class JdbRunner {
 
     private initProc(port: number) {
         var fileDir = path.dirname(this.sourceFile);
-        var jdbPath = path.join(this.args.jdkPath, "jdb");
-        this.jdbProc = child_process.spawn(jdbPath, ["-connect", `com.sun.jdi.SocketAttach:hostname=localhost,port=${port}`], {
+        var jdbPath = this.args.jdkPath ? path.join(this.args.jdkPath, "jdb") : "jdb";
+        var args = ["-connect", `com.sun.jdi.SocketAttach:hostname=localhost,port=${port}`];
+        // if (this.args.externalConsole === true) {
+        //     open({ wait: false, app: [jdbPath].concat(args), cwd: fileDir }).then(proc=> {
+        //         this.jdbProc = proc;
+        //     }, error=> {
+        //         if (!this.debugServer && this.debugServer.IsRunning) {
+        //             return;
+        //         }
+        //         this.displayError(error);
+        //     });
+
+        //     return;
+        // }
+        this.jdbProc = child_process.spawn(jdbPath, args, {
             cwd: fileDir
         });
 
@@ -69,8 +84,7 @@ export class JdbRunner {
             that.onDataReceived(data);
         });
         this.jdbProc.stdout.on("error", (data) => {
-            debugger;
-            that.sendRemoteConsoleLog("Pdb Error " + data);
+            that.sendRemoteConsoleLog("Jdb Error " + data);
         });
         this.jdbProc.stdout.on("exit", (data) => {
         });
@@ -78,8 +92,7 @@ export class JdbRunner {
             that.onDataReceived("", true);
         });
         this.jdbProc.stderr.on("data", (data) => {
-            debugger;
-            that.sendRemoteConsoleLog("Pdb Error Data" + data);
+            that.sendRemoteConsoleLog("Jdb Error Data" + data);
         });
     }
 
@@ -87,7 +100,7 @@ export class JdbRunner {
     private startProgramInDebugJavaMode(): Promise<number> {
         return getport().then((port: number) => {
             var fileDir = path.dirname(this.sourceFile);
-            var javaPath = this.args.jdkPath.length === 0 ? "java" : path.join(this.args.jdkPath, "java");
+            var javaPath = (!this.args.jdkPath || this.args.jdkPath.length === 0) ? "java" : path.join(this.args.jdkPath, "java");
             var args = [`-agentlib:jdwp=transport=dt_socket,server=y,address=${port}`].concat(this.args.options).concat(this.className);
             this.javaProc = child_process.spawn(javaPath, args, {
                 cwd: fileDir
@@ -97,7 +110,7 @@ export class JdbRunner {
                 this.javaLoadedResolve = resolve;
             });
 
-            //read the pdb output
+            //read the jdb output
             var that = this;
             var accumulatedData = "";
             this.javaProc.stdout.on("data", (data) => {
@@ -117,7 +130,6 @@ export class JdbRunner {
                 }
             });
             this.javaProc.stdout.on("error", (data) => {
-                debugger;
                 that.debugSession.sendEvent(new OutputEvent("Java Error" + data, "error"));
             });
             this.javaProc.stdout.on("exit", (data) => {
@@ -126,8 +138,6 @@ export class JdbRunner {
                 that.onDataReceived("", true);
             });
             this.javaProc.stderr.on("data", (data) => {
-                debugger;
-                //that.sendRemoteConsoleLog("Java Error Data" + data);
                 that.debugSession.sendEvent(new OutputEvent("Java Error Data" + data, "error"));
             });
             return this.javaLoaded;
@@ -140,13 +150,13 @@ export class JdbRunner {
         }
         return new Promise<string[]>(resolve => {
             this.jdbLoaded.then(() => {
-                var pdbCmd: IJdbRunnerCommand = <IJdbRunnerCommand>{ commandLine: command };
-                pdbCmd.promise = new Promise<string[]>(resolve => {
-                    pdbCmd.promiseResolve = resolve;
+                var jdbCmd: IJdbRunnerCommand = <IJdbRunnerCommand>{ commandLine: command };
+                jdbCmd.promise = new Promise<string[]>(resolve => {
+                    jdbCmd.promiseResolve = resolve;
                 });
-                pdbCmd.promise.then(resolve);
+                jdbCmd.promise.then(resolve);
 
-                this.pendingCommands.push(pdbCmd);
+                this.pendingCommands.push(jdbCmd);
                 this.checkAndSendCommand();
             });
         });
@@ -162,9 +172,9 @@ export class JdbRunner {
 
         if (this.executingCommands.length === 0) {
             if (this.pendingCommands.length > 0) {
-                var pdbCmd = this.pendingCommands[0];
-                this.executingCommands.push(pdbCmd);
-                this.jdbProc.stdin.write(pdbCmd.commandLine + "\n");
+                var jdbCmd = this.pendingCommands[0];
+                this.executingCommands.push(jdbCmd);
+                this.jdbProc.stdin.write(jdbCmd.commandLine + "\n");
             }
             return;
         }
@@ -183,6 +193,7 @@ export class JdbRunner {
     private javaLoadedResolve: (number) => void;
     private stopAtInitSent: boolean;
     private stopAtCliInitSent: boolean;
+    private stopAtMainSent: boolean;
     private runSent: boolean;
     private exited: boolean;
     private onDataReceived(data, exit: boolean = false) {
@@ -207,6 +218,12 @@ export class JdbRunner {
                 this.jdbProc.stdin.write(`stop in ${this.className}.<cliinit>\n`);
                 return;
             }
+            if (!this.stopAtMainSent) {
+                //Add the break point to the first entry point
+                this.stopAtMainSent = true;
+                this.jdbProc.stdin.write(`stop in ${this.className}.main\n`);
+                return;
+            }
             if (!this.runSent) {
                 //Add the break point to the first entry point
                 this.runSent = true;
@@ -221,6 +238,19 @@ export class JdbRunner {
             this.outputBuffer = "";
             this.readyToAcceptCommands = true;
             this.jdbLoadedResolve.call(this);
+            return;
+        }
+        if (this.executingCommands.length === 0 &&
+            (lastLine.trim().endsWith(JAVA_APPLICATION_EXITED) || 
+            (lines.length >= 2 && lines[lines.length - 2].trim().endsWith(JAVA_APPLICATION_EXITED))) &&
+            !this.readyToAcceptCommands) {
+ 
+            this.outputBuffer = "";
+            this.readyToAcceptCommands = true;
+            this.jdbLoadedResolve.call(this);
+        
+            this.exited = true;
+            this.exitedResolve();            
             return;
         }
 

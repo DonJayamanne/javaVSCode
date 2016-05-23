@@ -2,7 +2,7 @@ import {DebugProtocol} from 'vscode-debugprotocol';
 
 export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     program: string;
-    jdkPath: string;
+    jdkPath?: string;
     stopOnEntry?: boolean;
     externalConsole?: boolean;
     debugOptions?: string[];

@@ -75,7 +75,7 @@ class JavaDebugSession extends DebugSession {
         this.rootDir = path.dirname(this._sourceFile);
 
         this.jdbRunner = new JdbRunner(this._sourceFile, args, this);
-
+ 
         this.jdbRunner.jdbLoaded.then(() => {
             this.sendResponse(this.launchResponse);
             this.sendEvent(new StoppedEvent("entry", MAIN_THREAD_ID));

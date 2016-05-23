@@ -15,7 +15,7 @@ import * as logger from '../common/logger';
 
 const COMPILER_MESSAGE_SEPARATOR = "0EC18C4E-E0E1-4C42-B325-366003E0D504";
 const END_MARKER = "5EC18C4E-E0E1-4C42-B325-366003E0D505";
-const CHARACTERS_TO_TRIM_FROM_MESSAGE: string[] = ["\\r\\n", "\r\n"];
+const CHARACTERS_TO_TRIM_FROM_MESSAGE: string[] = ["\\r\\n", "\r\n", "\n", "\\n"];
 const MILLISECONDS_WAIT_FOR_PORT_TO_OPEN = 5000;
 
 export class CompilerServer {
@@ -37,8 +37,8 @@ export class CompilerServer {
         return getport().then((port: number) => {
             var processCwd = this.getJavaCompilerClassPath();
             var args = ["CompilerUtils", port.toString(), COMPILER_MESSAGE_SEPARATOR];
-            var javaPath = this.javaSettings.jdkPath.length === 0 ? "java" : path.join(this.javaSettings.jdkPath, "java");
-            this.javaProc = child_process.spawn(this.javaSettings.jdkPath, args, { cwd: processCwd });
+            var javaPath = (!this.javaSettings.jdkPath || this.javaSettings.jdkPath.length === 0) ? "java" : path.join(this.javaSettings.jdkPath, "java");
+            this.javaProc = child_process.spawn(javaPath, args, { cwd: processCwd });
             return Promise.all([port, WaitForPortToOpen(port, MILLISECONDS_WAIT_FOR_PORT_TO_OPEN)]);
         })
             .then(result => this.startClient(result[0]))
@@ -126,7 +126,6 @@ export class CompilerServer {
                         }
                         case "EXCEPTION": {
                             //Now, look for the next semi colon
-                            debugger;
                             let lengthOfMessagePortion = data.substring("EXCEPTION:".length);
                             let nextIndex = lengthOfMessagePortion.indexOf(":");
                             if (nextIndex > 0) {
@@ -135,7 +134,6 @@ export class CompilerServer {
                             break;
                         }
                         default: {
-                            debugger;
                             this.displayError("Uknown response from Compiler Services");
                             logger.error("Uknown response from Compiler Services", data);
                             break;

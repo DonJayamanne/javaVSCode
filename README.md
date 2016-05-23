@@ -6,9 +6,10 @@ Once installed, do remember to configure the JDK Path (both in settings and laun
 ##Features
 * Linting (uses the Java Compiler to identify issues. Errors are identifed upon saving changes)
 * Debugging with support for local variables, arguments, stack information, break points
-
+ + Still requires a lot of work (doesn't support multi threaded programs, JavaFX is partially supported)
+ 
 ##[Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
-* Enhancements to java debugger (pause and continue, remove break points, etc)
+* Enhancements to java debugger (pause and continue, remove break points, multiple threads, JavaFX, etc)
 * Support for configuration of compiler settings
 * Snippets
 

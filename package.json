@@ -32,7 +32,7 @@
             "java"
           ]
         },
-        "program": "./out/client/debugger/main.js",
+        "program": "./out/client/main.js",
         "runtime": "node",
         "configurationAttributes": {
           "launch": {

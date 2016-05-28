@@ -6,8 +6,10 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
-import {JdbRunner, MAIN_THREAD_ID, MAIN_THREAD_NAME} from './jdb';
+import {JdbRunner, JdbCommandType} from './jdb';
 import {LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThread, JavaEvaluationResultFlags, IDebugVariable, ICommand, IStackInfo} from './common/contracts';
+const LineByLineReader = require('line-by-line');
+const namedRegexp = require('named-js-regexp');
 
 interface ICommandToExecute {
     name: string
@@ -39,20 +41,29 @@ class JavaDebugSession extends DebugSession {
 
     private validFiles = {};
     private parseWhere(data: string): IStackInfo {
-        var currentStack = <IStackInfo>{};
-        var fileName = data.substring(data.lastIndexOf("(") + 1, data.lastIndexOf(":"));
-        var line = data.substring(data.lastIndexOf(":") + 1, data.lastIndexOf(")"));
-        var fullFileName = fileName;
-        if (this.validFiles[fileName]) {
-            fullFileName = path.join(this.rootDir, fileName);
+        if (data.indexOf("[") === -1) {
+            return null;
         }
-        else {
-            fullFileName = path.join(this.rootDir, fileName);
-            if (fs.existsSync(fullFileName)) {
-                this.validFiles[fileName] = true;
+        var currentStack = <IStackInfo>{};
+        var indexOfColon = data.lastIndexOf(":");
+        var fileName = "";
+        var line = "0";
+        var fullFileName = "";
+        if (indexOfColon > 0) {
+            fileName = data.substring(data.lastIndexOf("(") + 1, data.lastIndexOf(":"));
+            line = data.substring(data.lastIndexOf(":") + 1, data.lastIndexOf(")"));
+            fullFileName = fileName;
+            if (this.validFiles[fileName]) {
+                fullFileName = path.join(this.rootDir, fileName);
             }
             else {
-                fullFileName = fileName === "null" ? "" : fileName;
+                fullFileName = path.join(this.rootDir, fileName);
+                if (fs.existsSync(fullFileName)) {
+                    this.validFiles[fileName] = true;
+                }
+                else {
+                    fullFileName = fileName === "null" ? "" : fileName;
+                }
             }
         }
         currentStack.fileName = fullFileName;
@@ -64,35 +75,194 @@ class JavaDebugSession extends DebugSession {
     private jdbRunner: JdbRunner;
     private rootDir: string;
     private launchResponse: DebugProtocol.LaunchResponse;
+    private threads: IJavaThread[];
+    private getThreadId(name: string): Promise<number> {
+        if (this.threads && this.threads.length > 0) {
+            var thread = this.threads.filter(t => t.Name === name);
+            if (thread.length > 0) {
+                return Promise.resolve(thread[0].Id);
+            }
+        }
+
+        return this.getThreads().then(threads => {
+            this.threads = threads;
+            var thread = this.threads.filter(t => t.Name === name);
+            if (thread.length > 0) {
+                return thread[0].Id;
+            }
+            var thread = this.threads.filter(t => t.Name.indexOf(name) === 0);
+            if (thread.length > 0) {
+                return thread[0].Id;
+            }
+
+            //Error
+            debugger;
+            return 1;
+        });
+    }
+
+    private findThread(name: string, threads: IJavaThread[] = this.threads): IJavaThread {
+        var thread = threads.filter(t => t.Name === name);
+        if (thread.length > 0) {
+            return thread[0];
+        }
+        var thread = this.threads.filter(t => t.Name.indexOf(name) === 0);
+        if (thread.length > 0) {
+            return thread[0];
+        }
+
+        return null;
+    }
+
     protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
         this._sourceFile = args.program;
-        if (args.stopOnEntry) {
-            this.launchResponse = response;
-        } else {
-            // we just start to run until we hit a breakpoint or an exception
-            this.continueRequest(response, { threadId: MAIN_THREAD_ID });
-        }
+        this.launchResponse = response;
         this.rootDir = path.dirname(this._sourceFile);
 
         this.jdbRunner = new JdbRunner(this._sourceFile, args, this);
- 
+
         this.jdbRunner.jdbLoaded.then(() => {
+            //Ok, now get the thread id for this
             this.sendResponse(this.launchResponse);
-            this.sendEvent(new StoppedEvent("entry", MAIN_THREAD_ID));
+            // this.sendEvent(new StoppedEvent("entry"));
         });
 
         this.jdbRunner.Exited.then(() => {
             this.sendEvent(new TerminatedEvent());
         });
+
+        this.jdbRunner.addListener("breakpointHit", threadName => {
+            this.handleBreakPointHit(threadName);
+        });
+        this.jdbRunner.addListener("debuggerStopInvalidBreakPoints", threadName => {
+            this.handleBreakPointHit(threadName, "invalidBreakPoint");
+        });
     }
 
+    private getThreads(): Promise<IJavaThread[]> {
+        return this.jdbRunner.sendCmd("threads", JdbCommandType.ListThreads).then(data => {
+            // var index = data.data.indexOf("Group main:");
+            // if (index === -1 || index + 1 >= data.data.length) {
+            //     return [];
+            // }
+
+            var threads = data.data;//.splice(index + 1);
+            return threads.map(info => {
+                info = info.trim();
+                if (info.endsWith(":") && info.indexOf("[") === -1) {
+                    return null;
+                }
+                var REGEX = '(?<crap>(\.*))(?<id>0x[0-9A-Fa-f]*)\s*(?<name>.*)';
+                var namedRegexp = require('named-js-regexp');
+                var rawMatch = namedRegexp(REGEX, "g").exec(info);
+                if (rawMatch === null) {
+                    return null;
+                }
+                else {
+                    var groups = rawMatch.groups();
+                    var name = groups.name.trim();
+                    var items = name.split(" ").filter(value => value.trim().length > 0);
+                    var status = items[items.length - 1];
+                    if (name.indexOf("cond. waiting") === name.length - "cond. waiting".length) {
+                        name = name.substring(0, name.length - "cond. waiting".length).trim();
+                        status = "waiting";
+                    }
+                    else {
+                        if (name.indexOf("running (at breakpoint)") === name.length - "running (at breakpoint)".length) {
+                            name = name.substring(0, name.length - "running (at breakpoint)".length).trim();
+                            status = "running";
+                        }
+                        else {
+                            name = name.substring(0, name.length - status.length).trim();
+                        }
+                    }
+                    var t: IJavaThread = { Frames: [], Id: parseInt(groups.id), HexId: <string>groups.id, Name: <string>name };
+                    return t;
+                }
+            }).filter(t => t !== null);
+        });
+    }
+
+    private getClasseNames(filePath: string, maxLineNumber: number): Promise<string[]> {
+        return new Promise<boolean>((resolve, reject) => {
+            fs.exists(filePath, exists => {
+                if (exists) {
+                    resolve();
+                }
+                else {
+                    reject();
+                }
+            });
+        }).then(() => {
+            return new Promise<string[]>((resolve, reject) => {
+                var lr = new LineByLineReader(filePath);
+                var shebangLines: string[] = [];
+                var classNames: string[] = [];
+                var lineNumber = 0;
+                lr.on('error', err => {
+                    resolve(classNames);
+                });
+                lr.on('line', (line: string) => {
+                    lineNumber++;
+                    if (lineNumber > maxLineNumber) {
+                        lr.close();
+                        return false;
+                    }
+
+                    var REGEX = '.*(?<class>(class))\\s*(?<name>\\w*)\\s*.*';
+                    var rawMatch = namedRegexp(REGEX, "g").exec(line);
+                    if (rawMatch) {
+                        var name = <string>rawMatch.groups().name.trim();
+                        if (name.length > 0) {
+                            classNames.push(name);
+                        }
+                    }
+                });
+                lr.on('end', function () {
+                    resolve(classNames);
+                });
+            });
+        }).catch(() => {
+            return [];
+        });
+    }
+
+    private setBreakPoint(classNames: string[], line: number): Promise<any> {
+        return new Promise<any>((resolve, reject) => {
+            if (classNames.length === 0) {
+                return reject();
+            }
+            var className = classNames.pop();
+            this.jdbRunner.sendCmd(`stop at ${className}:${line}`, JdbCommandType.SetBreakPoint).then(resp => {
+                if (resp.data.length > 0 && resp.data[resp.data.length - 1].indexOf("Unable to set breakpoint") >= 0) {
+                    return this.setBreakPoint(classNames, line);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }
     protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
-        this.jdbRunner.jdbLoaded.then(() => {
-            var fileName = path.basename(args.source.path);
-            fileName = fileName.substring(0, fileName.length - path.extname(fileName).length);
+        this.jdbRunner.readyToAcceptBreakPoints.then(() => {
+            var className = path.basename(args.source.path);
+            className = className.substring(0, className.length - path.extname(className).length);
             var promises = args.breakpoints.map(bk => {
-                return this.jdbRunner.sendCmd(`stop at ${fileName}:${bk.line}`).then(() => {
-                    return bk.line;
+                return new Promise<{ threadName: string, line: number, verified: boolean }>(resolve => {
+                    this.jdbRunner.sendCmd(`stop at ${className}:${bk.line}`, JdbCommandType.SetBreakPoint).then(resp => {
+                        if (resp.data.length > 0 && resp.data.some(value => value.indexOf("Unable to set breakpoint") >= 0)) {
+                            this.getClasseNames(args.source.path, bk.line).then(classNames => {
+                                this.setBreakPoint(classNames, bk.line).then(() =>
+                                    resolve({ threadName: resp.threadName, line: bk.line, verified: true })
+                                ).catch(() =>
+                                    resolve({ threadName: resp.threadName, line: bk.line, verified: false })
+                                    );
+                            });
+                        }
+                        else {
+                            resolve({ threadName: resp.threadName, line: bk.line, verified: true });
+                        }
+                    });
                 });
             });
             Promise.all(promises).then(verifiedLines => {
@@ -101,30 +271,47 @@ class JavaDebugSession extends DebugSession {
                     breakpoints: []
                 };
                 verifiedLines.forEach(line => {
-                    response.body.breakpoints.push({ verified: true, line: <number><any>line });
+                    response.body.breakpoints.push({ verified: <boolean>(<any>line).verified, line: <number>(<any>line).line });
                 });
+
+                // var threadName = (<any>verifiedLines[0]).threadName;
+                // this.getThreadId(threadName).then(id => {
                 this.sendResponse(response);
-                this.sendEvent(new StoppedEvent("breakpoint", MAIN_THREAD_ID));
+                // this.sendEvent(new StoppedEvent("breakpoint", id));
+                // });
             });
         });
     }
 
     protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
-
-        // return the default thread
+        var threads = [];
         response.body = {
-            threads: [
-                new Thread(MAIN_THREAD_ID, MAIN_THREAD_NAME)
-            ]
+            threads: threads
         };
-        this.sendResponse(response);
+        if (!this.jdbRunner.readyToAcceptCommands) {
+            this.sendResponse(response);
+            return
+        }
+
+        this.jdbRunner.jdbLoaded.then(() => {
+            this.getThreads().then(javaThreads => {
+                javaThreads.forEach(t => {
+                    threads.push(new Thread(t.Id, t.Name));
+                });
+                this.sendResponse(response);
+            });
+        });
+
     }
 
     private parseStackTrace(data: string[]): IStackInfo[] {
         var stackInfo: IStackInfo[] = [];
         data.forEach(line => {
             if (line.trim().length > 0 && line.indexOf(":") > 0 && line.indexOf("(") > 0) {
-                stackInfo.push(this.parseWhere(line));
+                var stack = this.parseWhere(line);
+                if (stack) {
+                    stackInfo.push(stack);
+                }
             }
         });
 
@@ -137,46 +324,99 @@ class JavaDebugSession extends DebugSession {
         if (!this.jdbRunner.readyToAcceptCommands) {
             return
         }
-        this.jdbRunner.jdbLoaded.then(() => {
-            this.jdbRunner.sendCmd("where").then((data) => {
-                this.refreshStackInfo = false;
-                const frames = new Array<StackFrame>();
-                this.parseStackTrace(data).forEach((stackInfo, i) => {
-                    var name = stackInfo.function;
-                    frames.push(new StackFrame(i, `${name}(${i})`,
-                        new Source(stackInfo.fileName, this.convertDebuggerPathToClient(stackInfo.fileName)),
-                        this.convertDebuggerLineToClient(stackInfo.lineNumber - 1),
-                        0));
-                });
 
-                response.body = {
-                    stackFrames: frames
-                };
-                this.sendResponse(response);
+        this.determineWhereAll().then(threads => {
+            response.body = {
+                stackFrames: []
+            };
+
+            //Find the threadName
+            var filteredThreads = threads.filter(t => t.Id === args.threadId);
+            if (filteredThreads.length === 1) {
+                response.body.stackFrames = filteredThreads[0].Frames;
+            }
+            this.sendResponse(response);
+        });
+    }
+
+    private determineWhereAll(): Promise<IJavaThread[]> {
+        return this.jdbRunner.jdbLoaded.then(() => {
+            var whereAllPromise = this.jdbRunner.sendCmd("where all", JdbCommandType.ListStack).then(resp => {
+                var whereAll = resp.data;
+                var currentThread: IJavaThread = null;
+
+                //check if we have any stacks for threads that we don't know about
+                var missingThreadCount = whereAll.filter(where => {
+                    where = where.trim();
+                    if (!where.startsWith("[") && where.endsWith(":")) {
+                        var threadName = where.substring(0, where.length - 1);
+                        currentThread = this.findThread(threadName);
+                        return currentThread === null;
+                    }
+                    return false;
+                }).length;
+
+                var getThreadsPromise = Promise.resolve(this.threads);
+                if (missingThreadCount > 0) {
+                    getThreadsPromise = this.getThreads();
+                }
+
+                return getThreadsPromise.then(threads => {
+                    //Clear all of the previous stacks if there are any
+                    threads.forEach(t => t.Frames = []);
+
+                    whereAll.forEach(where => {
+                        where = where.trim();
+                        if (!where.startsWith("[") && where.endsWith(":")) {
+                            var threadName = where.substring(0, where.length - 1);
+                            currentThread = this.findThread(threadName, threads);
+                            return;
+                        }
+                        if (currentThread === null) {
+                            return;
+                        }
+                        var stackInfo = this.parseWhere(where);
+                        if (stackInfo === null) {
+                            return;
+                        }
+                        var i = currentThread.Frames.length;
+                        var name = stackInfo.function;
+                        currentThread.Frames.push(new StackFrame(i, `${name}(${i})`,
+                            new Source(stackInfo.fileName, stackInfo.fileName.length === 0 ? "" : this.convertDebuggerPathToClient(stackInfo.fileName)),
+                            stackInfo.lineNumber === 0 ? 0 : this.convertDebuggerLineToClient(stackInfo.lineNumber - 1),
+                            0));
+                    });
+
+                    return threads;
+                });
             });
+            return whereAllPromise;
         });
     }
 
     private getVariableValue(variableName: string): Promise<{ printedValue: string, dumpValue: string, dumpLines: string[] }> {
-        var printedPromise = this.jdbRunner.sendCmd("print " + variableName).then(data => {
+        var printedPromise = this.jdbRunner.sendCmd("print " + variableName, JdbCommandType.Print).then(resp => {
+            var data = resp.data;
             if (data.length === 0 || data[0].length === 0) {
                 throw "Invalid";
             }
-            if (data.length === 2 && !data[0].startsWith(variableName) && data[0].indexOf("ParseException: Name unknown: ") > 0) {
+            if (data.length === 2 && !data[0].startsWith(variableName) && data[0].indexOf("ParseException: Name unknown: ") >= 0) {
                 throw "Invalid";
             }
 
-            return data.join("").substring(` ${variableName} = `.length);
+            var variablePrintedValue = data.join("");
+            return variablePrintedValue.substring(variablePrintedValue.indexOf(` ${variableName} = `) + ` ${variableName} = `.length);
         });
-        var dumpPromise = this.jdbRunner.sendCmd("dump " + variableName).then(data => {
+        var dumpPromise = this.jdbRunner.sendCmd("dump " + variableName, JdbCommandType.Dump).then(resp => {
+            var data = resp.data;
             if (data.length === 0 || data[0].length === 0) {
                 throw "Invalid";
             }
-            if (data.length === 2 && !data[0].startsWith(variableName) && data[0].indexOf("ParseException: Name unknown: ") > 0) {
+            if (data.length === 2 && !data[0].startsWith(variableName) && data[0].indexOf("ParseException: Name unknown: ") >= 0) {
                 throw "Invalid";
             }
 
-            data[0] = data[0].substring(` ${variableName} = `.length);
+            data[0] = data[0].substring(data[0].indexOf(` ${variableName} = `) + ` ${variableName} = `.length);
             return [data.join(""), data];
         });
 
@@ -236,15 +476,16 @@ class JavaDebugSession extends DebugSession {
         this.jdbRunner.jdbLoaded.then(() => {
             var scopes: DebugProtocol.Scope[] = [];
             response.body = { scopes };
-            this.jdbRunner.sendCmd("locals").then(data => {
+            this.jdbRunner.sendCmd("locals", JdbCommandType.Locals).then(resp => {
+                var data = resp.data;
                 if (data.length === 0 || data.length === 1) {
                     this.sendResponse(response);
                     return;
                 }
 
                 //Parse the variables
-                var startIndexOfMethodArgs = data.findIndex(line => line.startsWith("Method arguments:"));
-                var startIndexOfLocalVariables = data.findIndex(line => line.startsWith("Local variables:"));
+                var startIndexOfMethodArgs = data.findIndex(line => line.endsWith("Method arguments:"));
+                var startIndexOfLocalVariables = data.findIndex(line => line.endsWith("Local variables:"));
 
                 var argsPromise = Promise.resolve();
                 if (startIndexOfMethodArgs >= 0) {
@@ -265,6 +506,13 @@ class JavaDebugSession extends DebugSession {
 
     private lastRequestedVariableId: string;
     protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
+        if (this.paused === true) {
+            response.body = {
+                variables: []
+            };
+            this.sendResponse(response);
+            return;
+        }
         var varRef = this._variableHandles.get(args.variablesReference);
 
         if (varRef.evaluateChildren === true) {
@@ -404,106 +652,86 @@ class JavaDebugSession extends DebugSession {
         if (!this.jdbRunner.readyToAcceptCommands) {
             return
         }
+        if (this.paused === true) {
+            this.sendErrorResponse(response, 2000, "Command unsupported while threads have been suspended/paused");
+            return;
+        }
         this.sendResponse(response);
-        this.jdbRunner.sendCmd("step").then((data) => {
-            this.sendEvent(new StoppedEvent("step", MAIN_THREAD_ID));
-            this.handleGenericResponse(data);
+        this.jdbRunner.sendCmd("step", JdbCommandType.Step).then(resp => {
+            this.getThreadId(resp.threadName).then(id => {
+                this.sendEvent(new StoppedEvent("step", id));
+            });
         });
     }
 
     protected stepOutRequest(response: DebugProtocol.StepInResponse): void {
+        if (this.paused === true) {
+            this.sendErrorResponse(response, 2000, "Command unsupported while threads have been suspended/paused");
+            return;
+        }
         this.sendResponse(response);
-        this.jdbRunner.sendCmd("step up").then((data) => {
-            this.sendEvent(new StoppedEvent("step out", MAIN_THREAD_ID));
-            this.handleGenericResponse(data);
+        this.jdbRunner.sendCmd("step up", JdbCommandType.StepUp).then(resp => {
+            this.getThreadId(resp.threadName).then(id => {
+                this.sendEvent(new StoppedEvent("step up", id));
+            });
         });
     }
 
-    private handleGenericResponse(data: string[]) {
-        //Handle responses like exiting out of the system
-        //If the first item starts with >, then this is most likely an output
-        if (data.length === 0) {
-            return;
-        }
-        var responseStartsFromIndex = 0;
-        if (data[0].startsWith("> ")) {
-            var outputList: string[] = [];
-            var outputEnded = false;
-            data.forEach((line, index) => {
-                if (outputEnded) {
-                    return;
-                }
-                if (line.startsWith("Step completed:") || line.startsWith("Breakpoint hit:")) {
-                    responseStartsFromIndex = index;
-                    outputEnded = true;
-                    return;
-                }
-                if (index === 0) {
-                    outputList.push(line.substring(2));
-                }
-                else {
-                    outputList.push(line);
-                }
-            });
-
-            var dataToSend = "";
-            //If we have an output, then we'd have at least one line
-            if (outputList.length === 1 && outputList[0].length === 0) {
-                dataToSend = outputList[0];
-            }
-            else {
-                //Add empty entry for a blank line (after the last message)
-                //Unfortunately this will result in cases where we have linebreaks unnecessarily
-                outputList.push("");
-                dataToSend = outputList.join("\n")
-            }
-            this.sendEvent(new OutputEvent(dataToSend));
-            data = data.filter((v, index) => index >= responseStartsFromIndex);
-        }
-
-        //Check if we have hit a breakpoint
-        //Breakpoint hit:
-        if (data.some(line => line.startsWith("Breakpoint hit:"))) {
-            this.sendEvent(new StoppedEvent("breakpoint", MAIN_THREAD_ID));
-        }
+    private handleBreakPointHit(threadName: string, eventName: string = "breakpoint") {
+        this.getThreadId(threadName).then(id => {
+            this.sendEvent(new StoppedEvent(eventName, id));
+        });
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
         this.sendResponse(response);
-        this.jdbRunner.sendCmd("exit").then((data) => {
-            this.handleGenericResponse(data);
-        });
+        this.jdbRunner.sendCmd("exit", JdbCommandType.Exit);
     }
 
     protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
         this.sendResponse(response);
-        this.jdbRunner.sendCmd("cont").then((data) => {
-            this.handleGenericResponse(data);
-        });
+        var cmd = "";
+        var cmdType: JdbCommandType;
+        if (this.paused) {
+            cmd = "resume";
+            cmdType = JdbCommandType.Resume;
+        }
+        else {
+            cmd = "cont";
+            cmdType = JdbCommandType.Continue;
+        }
+        this.jdbRunner.sendCmd(cmd, cmdType).then(() => {
+            this.paused = false;
+        });;
     }
 
     protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
+        if (this.paused === true) {
+            this.sendErrorResponse(response, 2000, "Command unsupported while threads have been suspended/paused");
+            return;
+        }
         this.sendResponse(response);
-        this.jdbRunner.sendCmd("next").then((data) => {
-            this.sendEvent(new StoppedEvent("next", MAIN_THREAD_ID));
-            this.handleGenericResponse(data);
+        this.jdbRunner.sendCmd("next", JdbCommandType.Next).then(resp => {
+            this.getThreadId(resp.threadName).then(id => {
+                this.sendEvent(new StoppedEvent("next", id));
+            });
         });
     }
 
     protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
-        // this.sendCommand(`p ${args.expression}`, response).then((data) => {
-        //     response.body = {
-        //         result: (<string[]>data).join(),
-        //         variablesReference: 0
-        //     };
-        //     this.sendResponse(response);
-        // });
+        this.sendErrorResponse(response, 2000, "Evaluating expressions is not yet supported");
     }
 
-    //Unsupported features
+    //Unsupported features 
+    private paused: boolean;
     protected pauseRequest(response: DebugProtocol.PauseResponse): void {
-        // console.error('Not yet implemented: pauseRequest');
-        this.sendErrorResponse(response, 2000, "Pause is not yet supported");
+        this.sendResponse(response);
+        this.jdbRunner.sendCmd("suspend", JdbCommandType.Suspend).then(resp => {
+            this.paused = true;
+            this.getThreadId(resp.threadName).then(id => {
+                this.sendEvent(new StoppedEvent("suspend", id));
+            });
+        });
     }
 
     protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): void {

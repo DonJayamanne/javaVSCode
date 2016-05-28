@@ -1,7 +1,9 @@
 import {DebugProtocol} from 'vscode-debugprotocol';
+import {StackFrame} from 'vscode-debugadapter';
 
 export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     program: string;
+    startupClass?: string;
     jdkPath?: string;
     stopOnEntry?: boolean;
     externalConsole?: boolean;
@@ -10,10 +12,12 @@ export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArgum
 }
 
 export interface IJavaThread {
-    IsWorkerThread: boolean;
+    //IsWorkerThread: boolean;
     Name: string;
     Id: number;
-    Frames: IJavaStackFrame[];
+    HexId: string;
+    //Frames: IJavaStackFrame[];
+    Frames: StackFrame[];
 }
 
 export interface IJavaStackFrame {

@@ -1,0 +1,147 @@
+Every single response MUST either end with ">" or "<threadName>[<number>] <optional text from debugger response>"
+
+1. Response for setting breakpoints:
+As you can see here sometimes the console ends with the thread name twice.
+So, check the last line (after the deferrered message) to check if it ends with thread name 1 or more times.
+Sometimes though a breakpoint responsee can come back as well!!!4
+
+Example 1:
+
+Deferring breakpoint Threading.main.
+It will be set after the class is loaded.
+main[1] main[1] 
+
+Example 2: When a breakpoint gets initialized as well
+
+Set deferred breakpoint Threading.main
+
+Deferring breakpoint Threading.main.
+It will be set after the class is loaded.
+main[1] main[1]  
+
+Example 3: When a breakpoint is hit
+
+Deferring breakpoint Threading.main.
+It will be set after the class is loaded.
+main[1] main[1] Breakpoint hit 
+
+Example 4:
+> Set deferred breakpoint Threading.main
+
+Breakpoint hit: "thread=main", Threading.main(), line=27 bci=0
+
+main[1] 
+
+Example 5:
+Set deferred breakpoint MyClientThread:79
+
+Breakpoint hit: "thread=Thread-1", MyClientThread.run(), line=79 bci=0
+
+Thread-1[1] 
+
+Example 6:
+Unable to set breakpoint Threading:79 : No code at line 79 in Threading
+Thread-0[1] 
+
+Example 7:
+Set breakpoint Threading:35
+Thread-0[1] 
+
+Example 8:
+Set breakpoint MyClientThread:79
+Thread-0[1]
+
+Eample 9:
+> Unable to set breakpoint Threading:79 : No code at line 79 in Threading
+>  
+
+Example 10:
+Set breakpoint MyClientThread:79
+> 
+
+Example 11:
+Unable to set breakpoint Threading:80 : No code at line 80 in Threading
+> Set breakpoint MyClientThread:79
+> 
+
+
+2. When run command is sent then the response is generaly a command prompt such as ">"
+Unless ofource the program exits fast
+
+3. Threads response
+Group system:
+ (java.lang.ref.Reference$ReferenceHandler)0x152 Reference Handler cond. waiting
+ (java.lang.ref.Finalizer$FinalizerThread)0x151 Finalizer cond. waiting
+ (java.lang.Thread)0x150 Signal Dispatcher running
+ (java.lang.Thread)0x14f Attach Listener running
+Group main:
+ (java.lang.Thread)0x1 main sleeping
+ (java.lang.Thread)0x1b5 Thread-0 running (at breakpoint)
+ (java.lang.Thread)0x1b6 Thread-1 running (at breakpoint)
+Thread-1[1] 
+
+4. Variables
+No local variables
+Thread-1[1] 
+
+No local variables
+Thread-0[1] 
+
+5. Breakpoint hit
+Example 1: Resonse has empty line in the begining
+
+Breakpoint hit: "thread=Thread-0", MyClientThread.run(), line=79 bci=0
+
+Thread-0[1] 
+
+Example 2: Response has empty line in the begining
+Good example where we have potentially two breakpoints being hit!!!!!
+
+Breakpoint hit: 
+Breakpoint hit: "thread=Thread-1", MyClientThread.run(), line=79 bci=0
+
+Thread-1[1] 
+
+6. Where All
+Attach Listener:
+Signal Dispatcher:
+Finalizer:
+  [1] java.lang.Object.wait (native method)
+  [2] java.lang.ref.ReferenceQueue.remove (ReferenceQueue.java:143)
+  [3] java.lang.ref.ReferenceQueue.remove (ReferenceQueue.java:164)
+  [4] java.lang.ref.Finalizer$FinalizerThread.run (Finalizer.java:209)
+Reference Handler:
+  [1] java.lang.Object.wait (native method)
+  [2] java.lang.Object.wait (Object.java:502)
+  [3] java.lang.ref.Reference.tryHandlePending (Reference.java:191)
+  [4] java.lang.ref.Reference$ReferenceHandler.run (Reference.java:153)
+main:
+  [1] java.lang.Thread.sleep (native method)
+  [2] Threading.main (Threading.java:31)
+Thread-0:
+  [1] MyClientThread.run (Threading.java:79)
+  [2] java.lang.Thread.run (Thread.java:745)
+Thread-1:
+  [1] MyClientThread.run (Threading.java:79)
+  [2] java.lang.Thread.run (Thread.java:745)
+Thread-0[1] 
+
+7. Suspending Threads
+All threads suspended.
+>
+
+8. Resuming threads
+> All threads resumed.
+>  
+
+
+9. Debugger block (the step worked, and immediately after than we had anotherr breakpoint hit in another thread)
+Empty line on the top
+
+Step completed: "thread=Thread-1", MyClientThread.run(), line=81 bci=28
+
+Thread-1[1] > 
+Breakpoint hit: 
+Breakpoint hit: 
+Breakpoint hit: "thread=Thread-0", MyClientThread.run(), line=79 bci=0
+Thread-0[1] 

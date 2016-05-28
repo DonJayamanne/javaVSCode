@@ -46,6 +46,11 @@
                 "description": "Absolute path to the program.",
                 "default": "${file}"
               },
+              "startupClass": {
+                "type": "string",
+                "description": "startup class (generally this will be the same as the file name without the extension)",
+                "default": ""
+              },
               "jdkPath": {
                 "type": "string",
                 "description": "Path JDK directory.",

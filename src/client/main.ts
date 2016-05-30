@@ -11,6 +11,10 @@ import {LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThr
 const LineByLineReader = require('line-by-line');
 const namedRegexp = require('named-js-regexp');
 
+interface IBreakpoint {
+    className: string;
+    line: number;
+}
 interface ICommandToExecute {
     name: string
     command?: string
@@ -18,18 +22,14 @@ interface ICommandToExecute {
 }
 
 class JavaDebugSession extends DebugSession {
-
-    private _variableHandles: Handles<IDebugVariable>;
+    private registeredBreakpointsByFileName: Map<string, IBreakpoint[]>;
+    private variableHandles: Handles<IDebugVariable>;
     private commands: ICommand[] = [];
-    private _sourceFile: string;
-    private _breakPoints: any;
-
 
     public constructor(debuggerLinesStartAt1: boolean, isServer: boolean) {
         super(debuggerLinesStartAt1, isServer === true);
-        this._sourceFile = null;
-        this._breakPoints = {};
-        this._variableHandles = new Handles<IDebugVariable>();
+        this.variableHandles = new Handles<IDebugVariable>();
+        this.registeredBreakpointsByFileName = new Map<string, IBreakpoint[]>();
     }
 
     protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -39,7 +39,7 @@ class JavaDebugSession extends DebugSession {
         this.sendEvent(new InitializedEvent());
     }
 
-    private validFiles = {};
+    private fileMapping = new Map<string, string>();
     private parseWhere(data: string): IStackInfo {
         if (data.indexOf("[") === -1) {
             return null;
@@ -49,26 +49,41 @@ class JavaDebugSession extends DebugSession {
         var fileName = "";
         var line = "0";
         var fullFileName = "";
-        if (indexOfColon > 0) {
+        var functionName = data.substring(data.indexOf("]") + 1, data.lastIndexOf("(")).trim();
+        if (indexOfColon > 0 && functionName.indexOf("java.") !== 0) {
             fileName = data.substring(data.lastIndexOf("(") + 1, data.lastIndexOf(":"));
             line = data.substring(data.lastIndexOf(":") + 1, data.lastIndexOf(")"));
             fullFileName = fileName;
-            if (this.validFiles[fileName]) {
-                fullFileName = path.join(this.rootDir, fileName);
+            if (this.fileMapping.has(fileName)) {
+                fullFileName = this.fileMapping.get(fileName);
             }
             else {
                 fullFileName = path.join(this.rootDir, fileName);
                 if (fs.existsSync(fullFileName)) {
-                    this.validFiles[fileName] = true;
+                    this.fileMapping.set(fileName, fullFileName);
                 }
                 else {
                     fullFileName = fileName === "null" ? "" : fileName;
+                    this.fileMapping.set(fileName, fullFileName);
+
+                    //it is possibly a package
+                    var index = functionName.lastIndexOf(".");
+                    if (index > 0 && functionName.indexOf(".") < index) {
+                        var packageName = functionName.substring(0, index);
+                        packageName = path.basename(packageName, path.extname(packageName));
+                        var packagePath = packageName.split(".").reduce((previousValue, currentValue) => path.join(previousValue, currentValue), "");
+                        var packageFileName = path.join(this.rootDir, packagePath, fileName);
+                        if (fs.existsSync(packageFileName)) {
+                            this.fileMapping.set(fileName, fullFileName);
+                            fullFileName = packageFileName;
+                        }
+                    }
                 }
             }
         }
         currentStack.fileName = fullFileName;
         currentStack.lineNumber = parseInt(line);
-        currentStack["function"] = data.substring(data.indexOf("]") + 1, data.lastIndexOf("(")).trim();
+        currentStack["function"] = functionName;
         currentStack.source = data;
         return currentStack;
     }
@@ -96,8 +111,7 @@ class JavaDebugSession extends DebugSession {
             }
 
             //Error
-            debugger;
-            return 1;
+            return 0;
         });
     }
 
@@ -115,16 +129,24 @@ class JavaDebugSession extends DebugSession {
     }
 
     protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
-        this._sourceFile = args.program;
         this.launchResponse = response;
-        this.rootDir = path.dirname(this._sourceFile);
+        this.rootDir = args.cwd;
 
-        this.jdbRunner = new JdbRunner(this._sourceFile, args, this);
+        this.jdbRunner = new JdbRunner(args, this);
 
         this.jdbRunner.jdbLoaded.then(() => {
             //Ok, now get the thread id for this
             this.sendResponse(this.launchResponse);
             // this.sendEvent(new StoppedEvent("entry"));
+        }).catch(error => {
+            var message: DebugProtocol.Message = { id: -1, format: "", showUser: true };
+            if (error instanceof Error) {
+                message.format = error.name + ":" + error.message;
+            }
+            else {
+                message.format = error + "";
+            }
+            this.sendErrorResponse(response, message);
         });
 
         this.jdbRunner.Exited.then(() => {
@@ -141,12 +163,7 @@ class JavaDebugSession extends DebugSession {
 
     private getThreads(): Promise<IJavaThread[]> {
         return this.jdbRunner.sendCmd("threads", JdbCommandType.ListThreads).then(data => {
-            // var index = data.data.indexOf("Group main:");
-            // if (index === -1 || index + 1 >= data.data.length) {
-            //     return [];
-            // }
-
-            var threads = data.data;//.splice(index + 1);
+            var threads = data.data;
             return threads.map(info => {
                 info = info.trim();
                 if (info.endsWith(":") && info.indexOf("[") === -1) {
@@ -227,58 +244,84 @@ class JavaDebugSession extends DebugSession {
         });
     }
 
-    private setBreakPoint(classNames: string[], line: number): Promise<any> {
+    private setBreakPoint(classNames: string[], line: number): Promise<{ className: string, verified: boolean }> {
         return new Promise<any>((resolve, reject) => {
             if (classNames.length === 0) {
                 return reject();
             }
             var className = classNames.pop();
-            this.jdbRunner.sendCmd(`stop at ${className}:${line}`, JdbCommandType.SetBreakPoint).then(resp => {
+            this.jdbRunner.sendCmd(`stop at ${className}:${line}`, JdbCommandType.SetBreakpoint).then(resp => {
                 if (resp.data.length > 0 && resp.data[resp.data.length - 1].indexOf("Unable to set breakpoint") >= 0) {
                     return this.setBreakPoint(classNames, line);
                 }
                 else {
-                    resolve();
+                    let verified = resp.data.some(value => value.indexOf("Set breakpoint") >= 0);
+                    resolve({ className: className, verified: verified });
                 }
             });
         });
     }
     protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
         this.jdbRunner.readyToAcceptBreakPoints.then(() => {
-            var className = path.basename(args.source.path);
+            if (!this.registeredBreakpointsByFileName.has(args.source.path)) {
+                this.registeredBreakpointsByFileName.set(args.source.path, []);
+            }
+            let linesWithBreakPointsForFile = this.registeredBreakpointsByFileName.get(args.source.path);
+
+            let className = path.basename(args.source.path);
             className = className.substring(0, className.length - path.extname(className).length);
-            var promises = args.breakpoints.map(bk => {
+            //Add breakpoints for lines that are new
+            let newBreakpoints = args.breakpoints.filter(bk => !linesWithBreakPointsForFile.some(item => item.line === bk.line));
+            let addBreakpoints = newBreakpoints.map(bk => {
                 return new Promise<{ threadName: string, line: number, verified: boolean }>(resolve => {
-                    this.jdbRunner.sendCmd(`stop at ${className}:${bk.line}`, JdbCommandType.SetBreakPoint).then(resp => {
+                    this.jdbRunner.sendCmd(`stop at ${className}:${bk.line}`, JdbCommandType.SetBreakpoint).then(resp => {
                         if (resp.data.length > 0 && resp.data.some(value => value.indexOf("Unable to set breakpoint") >= 0)) {
                             this.getClasseNames(args.source.path, bk.line).then(classNames => {
-                                this.setBreakPoint(classNames, bk.line).then(() =>
-                                    resolve({ threadName: resp.threadName, line: bk.line, verified: true })
-                                ).catch(() =>
-                                    resolve({ threadName: resp.threadName, line: bk.line, verified: false })
-                                    );
+                                this.setBreakPoint(classNames, bk.line)
+                                    .then(bkResp => {
+                                        //Keep track of this valid breakpoint
+                                        linesWithBreakPointsForFile.push({ className: bkResp.className, line: bk.line });
+                                        resolve({ threadName: resp.threadName, line: bk.line, verified: bkResp.verified });
+                                    })
+                                    .catch(() => resolve({ threadName: resp.threadName, line: bk.line, verified: false }));
                             });
                         }
                         else {
-                            resolve({ threadName: resp.threadName, line: bk.line, verified: true });
+                            let verified = resp.data.some(value => value.indexOf("Set breakpoint") >= 0);
+                            //Keep track of this valid breakpoint
+                            linesWithBreakPointsForFile.push({ className: className, line: bk.line });
+                            resolve({ threadName: resp.threadName, line: bk.line, verified: verified });
                         }
                     });
                 });
             });
-            Promise.all(promises).then(verifiedLines => {
+
+            //Add breakpoints for lines that are new
+            let redundantBreakpoints = linesWithBreakPointsForFile.filter(bk => args.lines.indexOf(bk.line) === -1);
+            let removeBreakpoints = redundantBreakpoints.map(bk =>
+                this.jdbRunner.sendCmd(`clear ${bk.className}:${bk.line}`, JdbCommandType.ClearBreakpoint).then(() => null)
+            );
+            Promise.all(addBreakpoints.concat(removeBreakpoints)).then(values => {
                 // send back the actual breakpoints
                 response.body = {
                     breakpoints: []
                 };
-                verifiedLines.forEach(line => {
-                    response.body.breakpoints.push({ verified: <boolean>(<any>line).verified, line: <number>(<any>line).line });
+
+                //Re-build the list of valid breakpoints
+                //remove the invalid list of breakpoints
+                linesWithBreakPointsForFile = linesWithBreakPointsForFile.filter(bk => !redundantBreakpoints.some(rbk => rbk.line === bk.line));
+                this.registeredBreakpointsByFileName.set(args.source.path, linesWithBreakPointsForFile);
+
+                //Return the breakpoints
+                let unVerifiedBreakpoints = args.breakpoints.filter(bk => !linesWithBreakPointsForFile.some(verifiedBk => verifiedBk.line === bk.line));
+                unVerifiedBreakpoints.forEach(bk => {
+                    response.body.breakpoints.push({ verified: false, line: bk.line });
+                });
+                linesWithBreakPointsForFile.forEach(line => {
+                    response.body.breakpoints.push({ verified: true, line: line.line });
                 });
 
-                // var threadName = (<any>verifiedLines[0]).threadName;
-                // this.getThreadId(threadName).then(id => {
                 this.sendResponse(response);
-                // this.sendEvent(new StoppedEvent("breakpoint", id));
-                // });
             });
         });
     }
@@ -469,7 +512,7 @@ class JavaDebugSession extends DebugSession {
         });
 
         return Promise.all(promises).then(() => {
-            scopes.push(new Scope(scopeName, this._variableHandles.create(variables), false));
+            scopes.push(new Scope(scopeName, this.variableHandles.create(variables), false));
         });
     }
     protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
@@ -513,7 +556,7 @@ class JavaDebugSession extends DebugSession {
             this.sendResponse(response);
             return;
         }
-        var varRef = this._variableHandles.get(args.variablesReference);
+        var varRef = this.variableHandles.get(args.variablesReference);
 
         if (varRef.evaluateChildren === true) {
             var parentVariable = varRef.variables[0];
@@ -543,7 +586,7 @@ class JavaDebugSession extends DebugSession {
                             variables: [variable],
                             evaluateChildren: true
                         };
-                        variablesReference = this._variableHandles.create(parentVariable);
+                        variablesReference = this.variableHandles.create(parentVariable);
                     }
 
                     variables.push({
@@ -591,7 +634,7 @@ class JavaDebugSession extends DebugSession {
                                     variables: [variable],
                                     evaluateChildren: true
                                 };
-                                variablesReference = this._variableHandles.create(parentVariable);
+                                variablesReference = this.variableHandles.create(parentVariable);
                             }
 
                             variables.push({
@@ -630,7 +673,7 @@ class JavaDebugSession extends DebugSession {
                         variables: [variable],
                         evaluateChildren: true
                     };
-                    variablesReference = this._variableHandles.create(parentVariable);
+                    variablesReference = this.variableHandles.create(parentVariable);
                 }
 
                 variables.push({
@@ -722,7 +765,6 @@ class JavaDebugSession extends DebugSession {
         this.sendErrorResponse(response, 2000, "Evaluating expressions is not yet supported");
     }
 
-    //Unsupported features 
     private paused: boolean;
     protected pauseRequest(response: DebugProtocol.PauseResponse): void {
         this.sendResponse(response);

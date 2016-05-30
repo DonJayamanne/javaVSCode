@@ -24,13 +24,21 @@ E.g. configure the tasks.json file as follows and use run the build task.
 ```
 
 ##[Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
-* Enhancements to java debugger (pause and continue, remove break points, multiple threads, JavaFX, watch window, evaluating expressions, etc)
+* Enhancements to java debugger (pause and continue, JavaFX, watch window, evaluating expressions, etc)
 
 ![Image of Debugging](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/debug.gif)
 
 ## Requirements
 * JDK is installed (version 1.7.0 and later)
  + Path to jdk is configured in launch.json
+
+## Change Log
+
+### Version 0.0.2
+* Added support for adding and removing breakpoints
+* Added support for local variables and arguments (with the ability to expand and view object/property details)
+* Added support for multi-threaded debugging
+* Added support for console apps (for Windows)
 
 ## Source
 

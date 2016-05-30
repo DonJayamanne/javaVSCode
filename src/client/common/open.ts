@@ -30,17 +30,17 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
 
     if (process.platform === 'darwin') {
         cmd = 'osascript';
-        args = [ '-e', 'tell application "terminal"',
-                '-e', 'do script "' + [opts.app].concat(appArgs).join(" ") + '"',
-                '-e', 'end tell' ];
-        
+        args = ['-e', 'tell application "terminal"',
+            '-e', 'do script "' + [opts.app].concat(appArgs).join(" ") + '"',
+            '-e', 'end tell'];
+
     } else if (process.platform === 'win32') {
         cmd = 'cmd';
-        args.push('/c', 'start');
+        args.push('/c', 'start', '');
 
-        if (opts.wait) {
-            args.push('/wait');
-        }
+        // if (opts.wait) {
+        args.push('/wait');
+        //  }
 
         if (opts.app) {
             args.push(opts.app);
@@ -70,10 +70,10 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
     var cp = childProcess.spawn(cmd, args, cpOpts);
 
     if (opts.wait) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             cp.once('error', reject);
 
-            cp.once('close', function(code) {
+            cp.once('close', function (code) {
                 if (code > 0) {
                     reject(new Error('Exited with code ' + code));
                     return;

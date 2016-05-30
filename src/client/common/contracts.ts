@@ -2,8 +2,8 @@ import {DebugProtocol} from 'vscode-debugprotocol';
 import {StackFrame} from 'vscode-debugadapter';
 
 export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
-    program: string;
-    startupClass?: string;
+    cwd: string;
+    startupClass: string;
     jdkPath?: string;
     stopOnEntry?: boolean;
     externalConsole?: boolean;

@@ -11,7 +11,7 @@
     "Debuggers"
   ],
   "activationEvents": [],
-  "license": "SEE LICENSE IN LICENSE or README.MD",
+  "license": "MIT",
   "homepage": "https://github.com/DonJayamanne/javaVSCode/blob/master/README.md",
   "repository": {
     "type": "git",

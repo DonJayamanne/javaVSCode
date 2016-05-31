@@ -74,7 +74,7 @@ class JavaDebugSession extends DebugSession {
                         var packagePath = packageName.split(".").reduce((previousValue, currentValue) => path.join(previousValue, currentValue), "");
                         var packageFileName = path.join(this.rootDir, packagePath, fileName);
                         if (fs.existsSync(packageFileName)) {
-                            this.fileMapping.set(fileName, fullFileName);
+                            this.fileMapping.set(fileName, packageFileName);
                             fullFileName = packageFileName;
                         }
                     }
@@ -443,8 +443,8 @@ class JavaDebugSession extends DebugSession {
             if (data.length === 0 || data[0].length === 0) {
                 throw "Invalid";
             }
-            if (data.length === 2 && !data[0].startsWith(variableName) && data[0].indexOf("ParseException: Name unknown: ") >= 0) {
-                throw "Invalid";
+            if (data.length === 2 && !data[0].startsWith(variableName) && data[0].indexOf("Exception: ") >= 0) {
+                throw data[0];
             }
 
             var variablePrintedValue = data.join("");
@@ -455,8 +455,8 @@ class JavaDebugSession extends DebugSession {
             if (data.length === 0 || data[0].length === 0) {
                 throw "Invalid";
             }
-            if (data.length === 2 && !data[0].startsWith(variableName) && data[0].indexOf("ParseException: Name unknown: ") >= 0) {
-                throw "Invalid";
+            if (data.length === 2 && !data[0].startsWith(variableName) && data[0].indexOf("Exception: ") >= 0) {
+                throw data[0];
             }
 
             data[0] = data[0].substring(data[0].indexOf(` ${variableName} = `) + ` ${variableName} = `.length);
@@ -505,9 +505,21 @@ class JavaDebugSession extends DebugSession {
                     DumpRepr: value.dumpValue,
                     DumpLines: value.dumpLines
                 });
-            }).catch(() => {
+            }).catch(ex => {
                 //swallow exception
-                return "";
+                variables.variables.push({
+                    StringRepr: ex,
+                    ChildName: "",
+                    ExceptionText: "",
+                    Expression: variableName,
+                    Flags: JavaEvaluationResultFlags.Raw,
+                    Frame: null,
+                    IsExpandable: false,
+                    Length: 0,
+                    TypeName: "string",
+                    DumpRepr: ex,
+                    DumpLines: [ex]
+                });
             });
         });
 
@@ -613,8 +625,8 @@ class JavaDebugSession extends DebugSession {
 
                         var expr = `${parentVariable.Expression}.${propertyName}`;
                         return this.getVariableValue(expr).then(values => {
-                            var isComplex = this.isComplexObject(values.printedValue) || this.isComplexObject(values.dumpValue);
-                            var variable = <IJavaEvaluationResult>{
+                            let isComplex = this.isComplexObject(values.printedValue) || this.isComplexObject(values.dumpValue);
+                            let variable = <IJavaEvaluationResult>{
                                 StringRepr: values.printedValue,
                                 ChildName: propertyName,
                                 ExceptionText: "",
@@ -642,8 +654,35 @@ class JavaDebugSession extends DebugSession {
                                 value: variable.StringRepr,
                                 variablesReference: variablesReference
                             });
-                        }).catch(() => {
-                            return "";
+                        }).catch(ex => {
+                            let variable = <IJavaEvaluationResult>{
+                                StringRepr: ex,
+                                ChildName: propertyName,
+                                ExceptionText: "",
+                                Expression: expr,
+                                Flags: JavaEvaluationResultFlags.Raw,
+                                Frame: null,
+                                IsExpandable: false,
+                                Length: 0,
+                                TypeName: "string",
+                                DumpRepr: ex,
+                                DumpLines: [ex]
+                            };
+                            let variablesReference = 0;
+                            //If this value can be expanded, then create a vars ref for user to expand it
+                            if (variable.IsExpandable) {
+                                const parentVariable: IDebugVariable = {
+                                    variables: [variable],
+                                    evaluateChildren: false
+                                };
+                                variablesReference = this.variableHandles.create(parentVariable);
+                            }
+
+                            variables.push({
+                                name: variable.ChildName,
+                                value: variable.StringRepr,
+                                variablesReference: variablesReference
+                            });
                         });
                     });
 
@@ -762,7 +801,34 @@ class JavaDebugSession extends DebugSession {
     }
 
     protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
-        this.sendErrorResponse(response, 2000, "Evaluating expressions is not yet supported");
+        this.jdbRunner.jdbLoaded.then(() => {
+            this.getVariableValue(args.expression).then(value => {
+                var isComplex = this.isComplexObject(value.printedValue) || this.isComplexObject(value.dumpValue);
+                let variables: IDebugVariable = { evaluateChildren: true, variables: [] };
+                variables.variables.push({
+                    StringRepr: value.printedValue,
+                    ChildName: "",
+                    ExceptionText: "",
+                    Expression: args.expression,
+                    Flags: isComplex ? JavaEvaluationResultFlags.Expandable : JavaEvaluationResultFlags.Raw,
+                    Frame: null,
+                    IsExpandable: isComplex,
+                    Length: 0,
+                    TypeName: "string",
+                    DumpRepr: value.dumpValue,
+                    DumpLines: value.dumpLines
+                });
+
+                response.body = {
+                    result: value.printedValue,
+                    variablesReference: isComplex ? this.variableHandles.create(variables) : 0
+                };
+
+                this.sendResponse(response);
+            }).catch(error => {
+                this.sendErrorResponse(response, 2000, error);
+            });
+        });
     }
 
     private paused: boolean;

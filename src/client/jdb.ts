@@ -104,8 +104,27 @@ export class JdbRunner extends EventEmitter {
         this.Exited = new Promise<any>((resolve, reject) => {
             this.exitedResolve = resolve;
         });
+
+        this.jdbLoaded.catch(() => this.killProcesses());
+        this.Exited.then(() => this.killProcesses());
     }
 
+    private killProcesses() {
+        try {
+            this.jdbProc.kill();
+            this.jdbProc = null;
+        }
+        catch (ex) {
+
+        }
+        try {
+            this.javaProc.kill();
+            this.javaProc = null;
+        }
+        catch (ex) {
+
+        }
+    }
     private sendRemoteConsoleLog(msg) {
         this.debugSession.sendEvent(new OutputEvent(msg));
     }
@@ -438,8 +457,15 @@ export class JdbRunner extends EventEmitter {
         //We're now looking for a line that starts with ">" or "main[1]" (thread name)
         // let indexOfEndOfResponse = lines.findIndex(line => line.indexOf(">") === 0 || STARTS_WITH_THREAD_NAME_REGEX.test(line));
         var reversedArray = lines.slice().reverse();
-        let indexOfEndOfResponse = reversedArray.findIndex(line => line.startsWith(this.lastThreadName + "["));
+        let indexOfEndOfResponse = reversedArray.findIndex(line => line.startsWith(this.lastThreadName + "[") || IS_THREAD_NAME_REGEX.test(line));
         if (indexOfEndOfResponse === -1) {
+            //However sometimes, we have breakpoints being hit, and the response gets mangled pause
+            //We have the text "Breakpoint hit: Group System: .." (responses for multiple commands getting mixed)
+            //This is to be expected as we have multiple threads (I think multiple threads) writing to the same stream (hmmm)
+            //Anyways
+
+            //Question is how on earth do we handle this situtation
+            //Proper Solution - use jpda (instead of jdb) 
             return;
         }
 

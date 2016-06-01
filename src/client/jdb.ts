@@ -223,6 +223,12 @@ export class JdbRunner extends EventEmitter {
             }
         });
         this.javaProc.stdout.on("close", (data) => {
+            if (!this.javaServerAppStarted && !this.readyToAcceptCommands) {
+                this.exited = true;
+                this.javaLoadedReject(accumulatedData);
+                this.debugSession.sendEvent(new OutputEvent(accumulatedData));
+                return;
+            }
             this.onDataReceived("", true);
         });
         this.javaProc.stderr.on("data", (data) => {
@@ -232,7 +238,8 @@ export class JdbRunner extends EventEmitter {
             }
             else {
                 this.exited = true;
-                this.javaLoadedReject("Failed to start the program, " + message);
+                this.javaLoadedReject(message);
+                this.debugSession.sendEvent(new OutputEvent(message));
             }
         });
         this.javaProc.on("error", (data) => {

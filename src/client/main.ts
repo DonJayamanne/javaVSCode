@@ -10,7 +10,7 @@ import {JdbRunner, JdbCommandType} from './jdb';
 import {LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThread, JavaEvaluationResultFlags, IDebugVariable, ICommand, IStackInfo} from './common/contracts';
 const LineByLineReader = require('line-by-line');
 const namedRegexp = require('named-js-regexp');
-
+const ARRAY_ELEMENT_REGEX = new RegExp("^\\w+.*\\[[0-9]+\\]$");
 interface IBreakpoint {
     className: string;
     line: number;
@@ -560,6 +560,41 @@ class JavaDebugSession extends DebugSession {
     }
 
     private lastRequestedVariableId: string;
+    private getArrayValues(dumpRepr: string, parentExpression: string): any[] {
+        //Split by commas
+        var value = dumpRepr.trim().substring(1);
+        value = value.substring(0, value.length - 1);
+        return value.split(", ").map((item, index) => {
+            var variable = <IJavaEvaluationResult>{
+                StringRepr: item,
+                ChildName: `[${index}]`,
+                ExceptionText: "",
+                Expression: `${parentExpression}[${index}]`,
+                Flags: this.isComplexObject(item) ? JavaEvaluationResultFlags.Expandable : JavaEvaluationResultFlags.Raw,
+                Frame: null,
+                IsExpandable: this.isComplexObject(item),
+                Length: 0,
+                TypeName: "string",
+                DumpRepr: item,
+                DumpLines: []
+            };
+            let variablesReference = 0;
+            //If this value can be expanded, then create a vars ref for user to expand it
+            if (variable.IsExpandable) {
+                const parentVariable: IDebugVariable = {
+                    variables: [variable],
+                    evaluateChildren: true
+                };
+                variablesReference = this.variableHandles.create(parentVariable);
+            }
+
+            return {
+                name: variable.ChildName,
+                value: variable.StringRepr,
+                variablesReference: variablesReference
+            };
+        });
+    }
     protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
         if (this.paused === true) {
             response.body = {
@@ -573,40 +608,7 @@ class JavaDebugSession extends DebugSession {
         if (varRef.evaluateChildren === true) {
             var parentVariable = varRef.variables[0];
             if (this.isArray(parentVariable.StringRepr, parentVariable.DumpRepr)) {
-                //Split by commas
-                var value = parentVariable.DumpRepr.trim().substring(1);
-                value = value.substring(0, value.length - 1);
-                let variables = [];
-                value.split(", ").forEach((item, index) => {
-                    var variable = <IJavaEvaluationResult>{
-                        StringRepr: item,
-                        ChildName: `[${index}]`,
-                        ExceptionText: "",
-                        Expression: `${parentVariable.Expression}[${index}]`,
-                        Flags: this.isComplexObject(item) ? JavaEvaluationResultFlags.Expandable : JavaEvaluationResultFlags.Raw,
-                        Frame: null,
-                        IsExpandable: this.isComplexObject(item),
-                        Length: 0,
-                        TypeName: "string",
-                        DumpRepr: item,
-                        DumpLines: []
-                    };
-                    let variablesReference = 0;
-                    //If this value can be expanded, then create a vars ref for user to expand it
-                    if (variable.IsExpandable) {
-                        const parentVariable: IDebugVariable = {
-                            variables: [variable],
-                            evaluateChildren: true
-                        };
-                        variablesReference = this.variableHandles.create(parentVariable);
-                    }
-
-                    variables.push({
-                        name: variable.ChildName,
-                        value: variable.StringRepr,
-                        variablesReference: variablesReference
-                    });
-                });
+                let variables = this.getArrayValues(parentVariable.DumpRepr, parentVariable.Expression);
                 response.body = {
                     variables: variables
                 };
@@ -687,6 +689,84 @@ class JavaDebugSession extends DebugSession {
                     });
 
                     Promise.all(promises).then(() => {
+                        response.body = {
+                            variables: variables
+                        };
+                        this.sendResponse(response);
+                    });
+
+                    return;
+                }
+                if (ARRAY_ELEMENT_REGEX.test(parentVariable.Expression)) {
+                    let variables = [];
+                    this.getVariableValue(parentVariable.Expression).then(values => {
+                        if (this.isArray(values.printedValue, values.dumpValue)) {
+                            variables = this.getArrayValues(values.dumpValue, parentVariable.Expression);
+                            return;
+                        }
+
+                        //TODO: Certain this is wrong and will need clean up (leaving for later due to lack of time)
+                        //Worst case user will have to expan again (yuck, but works, till then TODO)
+                        let isComplex = this.isComplexObject(values.printedValue) || this.isComplexObject(values.dumpValue);
+                        let variable = <IJavaEvaluationResult>{
+                            StringRepr: values.printedValue,
+                            ChildName: parentVariable.Expression,
+                            ExceptionText: "",
+                            Expression: parentVariable.Expression,
+                            Flags: isComplex ? JavaEvaluationResultFlags.Expandable : JavaEvaluationResultFlags.Raw,
+                            Frame: null,
+                            IsExpandable: isComplex,
+                            Length: 0,
+                            TypeName: "string",
+                            DumpRepr: values.dumpValue,
+                            DumpLines: values.dumpLines
+                        };
+                        let variablesReference = 0;
+                        //If this value can be expanded, then create a vars ref for user to expand it
+                        if (variable.IsExpandable) {
+                            const parentVariable: IDebugVariable = {
+                                variables: [variable],
+                                evaluateChildren: true
+                            };
+                            variablesReference = this.variableHandles.create(parentVariable);
+                        }
+
+                        variables.push({
+                            name: variable.ChildName,
+                            value: variable.StringRepr,
+                            variablesReference: variablesReference
+                        });
+                    }).catch(ex => {
+                        //TODO: DRY
+                        let variable = <IJavaEvaluationResult>{
+                            StringRepr: ex,
+                            ChildName: parentVariable.Expression,
+                            ExceptionText: "",
+                            Expression: parentVariable.Expression,
+                            Flags: JavaEvaluationResultFlags.Raw,
+                            Frame: null,
+                            IsExpandable: false,
+                            Length: 0,
+                            TypeName: "string",
+                            DumpRepr: ex,
+                            DumpLines: [ex]
+                        };
+                        let variablesReference = 0;
+                        //If this value can be expanded, then create a vars ref for user to expand it
+                        if (variable.IsExpandable) {
+                            const parentVariable: IDebugVariable = {
+                                variables: [variable],
+                                evaluateChildren: false
+                            };
+                            variablesReference = this.variableHandles.create(parentVariable);
+                        }
+
+                        variables.push({
+                            name: variable.ChildName,
+                            value: variable.StringRepr,
+                            variablesReference: variablesReference
+                        });
+                    }).then(() => {
                         response.body = {
                             variables: variables
                         };

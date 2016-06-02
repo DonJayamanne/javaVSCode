@@ -154,6 +154,19 @@ export class JdbRunner extends EventEmitter {
         this.jdbProc.stdout.on("close", (data) => {
             this.onDataReceived("", true);
         });
+        this.jdbProc.on("error", (data) => {
+            if (this.javaServerAppStarted && this.readyToAcceptCommands) {
+                var message = data;
+                if (data instanceof Error) {
+                    message = (<Error>data).name + ": " + (<Error>data).message;
+                }
+                this.debugSession.sendEvent(new OutputEvent("jdb Error " + message, "error"));
+            }
+            else {
+                this.exited = true;
+                this.jdbLoadedReject(data);
+            }
+        });
     }
 
     private javaServerAppStarted: boolean;

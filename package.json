@@ -5,7 +5,7 @@
   "version": "0.0.2",
   "publisher": "donjayamanne",
   "engines": {
-    "vscode": "^1.0.0"
+    "vscode": "^0.10.8"
   },
   "categories": [
     "Debuggers"

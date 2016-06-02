@@ -615,7 +615,8 @@ class JavaDebugSession extends DebugSession {
                 this.sendResponse(response);
             }
             else {
-                if (this.isComplexObject(parentVariable.DumpRepr) && parentVariable.StringRepr.indexOf("@") > 0) {
+                if (!ARRAY_ELEMENT_REGEX.test(parentVariable.Expression)) {
+                    //this.isComplexObject(parentVariable.DumpRepr) && parentVariable.StringRepr.indexOf("@") > 0) {
                     let variables = [];
                     var promises = parentVariable.DumpLines.map(propertyLine => {
                         if (propertyLine.trim().length === 1) {
@@ -697,7 +698,7 @@ class JavaDebugSession extends DebugSession {
 
                     return;
                 }
-                if (ARRAY_ELEMENT_REGEX.test(parentVariable.Expression)) {
+                else {
                     let variables = [];
                     this.getVariableValue(parentVariable.Expression).then(values => {
                         if (this.isArray(values.printedValue, values.dumpValue)) {
@@ -776,10 +777,10 @@ class JavaDebugSession extends DebugSession {
                     return;
                 }
 
-                response.body = {
-                    variables: []
-                };
-                this.sendResponse(response);
+                // response.body = {
+                //     variables: []
+                // };
+                // this.sendResponse(response);
             }
         }
         else {

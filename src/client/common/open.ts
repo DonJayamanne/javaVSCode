@@ -31,7 +31,7 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
     if (process.platform === 'darwin') {
         cmd = 'osascript';
         args = ['-e', 'tell application "terminal"',
-            '-e', 'do script "' + [opts.app].concat(appArgs).join(" ") + '"',
+            '-e', 'do script "cd \\"' + opts.cwd + '\\"; ' + [opts.app].concat(appArgs).join(" ") + '"',
             '-e', 'end tell'];
 
     } else if (process.platform === 'win32') {

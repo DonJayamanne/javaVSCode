@@ -29,7 +29,7 @@ E.g. configure the tasks.json file as follows and use run the build task.
 
 ![Image of Debugging](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/debug.gif)
 ![Image of JavaFx](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/javafx.gif)
-![Image of Loop](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/loop.gif)
+![Image of Loop](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/Loop.gif)
 
 ## Requirements
 * JDK is installed (version 1.7.0 and later)

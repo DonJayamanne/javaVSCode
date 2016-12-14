@@ -130,12 +130,9 @@ export class JdbRunner extends EventEmitter {
     private initProc(port: number) {
         var jdbPath = this.args.jdkPath ? path.join(this.args.jdkPath, "jdb") : "jdb";
         var args = ["-connect", `com.sun.jdi.SocketAttach:hostname=localhost,port=${port}`];
-        
         if (this.args.sourcePath) {
             args = args.concat("-sourcepath", this.args.sourcePath.join(path.delimiter));
         }
-        this.sendRemoteConsoleLog("start debugging " + args.join(" "));
-
         this.jdbProc = child_process.spawn(jdbPath, args, {
             cwd: this.args.cwd
         });

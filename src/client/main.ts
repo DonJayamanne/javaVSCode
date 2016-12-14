@@ -1,15 +1,15 @@
-'use strict';
-
 import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles} from 'vscode-debugadapter';
 import {DebugProtocol} from 'vscode-debugprotocol';
+import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
+
 import * as child_process from 'child_process';
 import {JdbRunner, JdbCommandType} from './jdb';
 import {LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThread, JavaEvaluationResultFlags, IDebugVariable, ICommand, IStackInfo} from './common/contracts';
-const LineByLineReader = require('line-by-line');
-const namedRegexp = require('named-js-regexp');
+import LineByLineReader = require('line-by-line');
+import namedRegexp = require('named-js-regexp');
 const ARRAY_ELEMENT_REGEX = new RegExp("^\\w+.*\\[[0-9]+\\]$");
 interface IBreakpoint {
     className: string;
@@ -79,6 +79,7 @@ class JavaDebugSession extends DebugSession {
                         }
                     }
                 }
+                
             }
         }
         currentStack.fileName = fullFileName;
@@ -130,7 +131,7 @@ class JavaDebugSession extends DebugSession {
 
     protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
         this.launchResponse = response;
-        this.rootDir = args.cwd;
+        this.rootDir = args.cwd;        
 
         this.jdbRunner = new JdbRunner(args, this);
 

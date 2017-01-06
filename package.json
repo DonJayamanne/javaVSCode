@@ -74,6 +74,69 @@
                 },
                 "default": [],
                 "description": "Options to be passed to the java executable (java)."
+              },
+              "remoteHost": {
+                "type": "string",
+                "description": "Hostname to attach the jdb connection to. Defaults to localhost",
+                "default": "localhost"
+              },
+              "remotePort": {
+                "type": "number",
+                "description": "Port number to attach the jdb connection to. Defaults to a randomly assigned port",
+                "default": null
+              }
+            }
+          },
+          "attach": {
+            "required": [
+              "jdkPath",
+              "cwd",
+              "startupClass",
+              "remotePort"
+            ],
+            "properties": {
+              "cwd": {
+                "type": "string",
+                "description": "Current working directory (defaults to the directory where the current file is located).",
+                "default": "${fileDirname}"
+              },
+              "startupClass": {
+                "type": "string",
+                "description": "startup class (this will deault to the current file name)",
+                "default": "${fileBasename}"
+              },
+              "jdkPath": {
+                "type": "string",
+                "description": "Path JDK directory.",
+                "default": ""
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": true
+              },
+              "externalConsole": {
+                "type": "boolean",
+                "description": "Launch debug target in external console window.",
+                "default": false
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Options to be passed to the java executable (java)."
+              },
+              "remoteHost": {
+                "type": "string",
+                "description": "Hostname to attach the jdb connection to. Defaults to localhost",
+                "default": "localhost"
+              },
+              "remotePort": {
+                "type": "number",
+                "description": "Port number to attach the jdb connection to. Defaults to a randomly assigned port",
+                "default": null
               }
             }
           }

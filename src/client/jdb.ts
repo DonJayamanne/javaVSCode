@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as child_process from 'child_process';
 import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles} from 'vscode-debugadapter';
 const getport = require("get-port");
-import {LaunchRequestArguments} from './common/contracts';
+import {AttachRequestArguments, LaunchRequestArguments, isAttachRequestArguments} from './common/contracts';
 import {open} from './common/open';
 import {EventEmitter} from 'events';
 import {WaitForPortToOpen} from './common/waitForPortToOpen';
@@ -84,7 +84,7 @@ export class JdbRunner extends EventEmitter {
     private className: string;
     public Exited: Promise<any>;
     private exitedResolve: () => void;
-    public constructor(private args: LaunchRequestArguments, debugSession: DebugSession) {
+    public constructor(private args: LaunchRequestArguments | AttachRequestArguments, debugSession: DebugSession) {
         super();
         this.debugSession = debugSession;
         let ext = path.extname(args.startupClass);
@@ -96,10 +96,17 @@ export class JdbRunner extends EventEmitter {
         this.readyToAcceptBreakPoints = new Promise<string>((resolve) => {
             this.readyToAcceptBreakPointsResolve = resolve;
         });
-
-        this.startProgramInDebugJavaMode().then(port => {
-            this.initProc(port);
-        }).catch(this.jdbLoadedReject);
+        if (isAttachRequestArguments(args)) {
+            
+            if (! args.remoteHost) {
+                args.remoteHost = "localhost";
+            }
+            this.initProc(args.remotePort, args.remoteHost);
+        } else {
+            this.startProgramInDebugJavaMode().then(port => {
+                this.initProc(port, "localhost");       // This always spins up the application on the local machine.
+            }).catch(this.jdbLoadedReject);
+        }
 
         this.Exited = new Promise<any>((resolve, reject) => {
             this.exitedResolve = resolve;
@@ -129,9 +136,9 @@ export class JdbRunner extends EventEmitter {
         this.debugSession.sendEvent(new OutputEvent(msg));
     }
 
-    private initProc(port: number) {
+    private initProc(port: number, hostname: string) {
         var jdbPath = this.args.jdkPath ? path.join(this.args.jdkPath, "jdb") : "jdb";
-        var args = ["-connect", `com.sun.jdi.SocketAttach:hostname=localhost,port=${port}`];
+        var args = ["-connect", `com.sun.jdi.SocketAttach:hostname=${hostname},port=${port}`];
         this.jdbProc = child_process.spawn(jdbPath, args, {
             cwd: this.args.cwd
         });

@@ -7,7 +7,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
 import {JdbRunner, JdbCommandType} from './jdb';
-import {LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThread, JavaEvaluationResultFlags, IDebugVariable, ICommand, IStackInfo} from './common/contracts';
+import {AttachRequestArguments, LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThread, JavaEvaluationResultFlags, IDebugVariable, ICommand, IStackInfo} from './common/contracts';
 const LineByLineReader = require('line-by-line');
 const namedRegexp = require('named-js-regexp');
 const ARRAY_ELEMENT_REGEX = new RegExp("^\\w+.*\\[[0-9]+\\]$");
@@ -126,6 +126,11 @@ class JavaDebugSession extends DebugSession {
         }
 
         return null;
+    }
+
+    protected attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments): void {
+        // This seems to work for now. There is no specific configuration for attach, as JdbRunner handles both types of args
+        this.launchRequest(response, args);
     }
 
     protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {

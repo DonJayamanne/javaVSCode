@@ -11,6 +11,15 @@ export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArgum
     options?: string[];
 }
 
+export interface AttachRequestArguments extends LaunchRequestArguments {
+    remoteHost?: string;
+    remotePort: number;
+}
+
+export function isAttachRequestArguments(arg: LaunchRequestArguments | AttachRequestArguments): arg is AttachRequestArguments {
+    return (arg as AttachRequestArguments).remotePort !== undefined;
+}
+
 export interface IJavaThread {
     //IsWorkerThread: boolean;
     Name: string;

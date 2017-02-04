@@ -1,5 +1,3 @@
-'use strict';
-
 import * as net from 'net';
 
 export function WaitForPortToOpen(port: number, timeout: number): Promise<any> {
@@ -31,7 +29,7 @@ export function WaitForPortToOpen(port: number, timeout: number): Promise<any> {
                     return;
                 }
 
-                if (error.code === "ECONNREFUSED" && !timedOut) {
+                if ((<any>error).code === "ECONNREFUSED" && !timedOut) {
                     setTimeout(() => { tryToConnect(); }, 10);
                     return;
                 }

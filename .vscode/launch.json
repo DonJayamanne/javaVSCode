@@ -12,7 +12,7 @@
             ],
             "stopOnEntry": false,
             "sourceMaps": true,
-            "outDir": "${workspaceRoot}/out",
+            "outDir": "${workspaceRoot}/out/src/client",
             "preLaunchTask": "npm"
         },
         {
@@ -22,11 +22,11 @@
             "runtimeExecutable": "${execPath}",
             "args": [
                 "--extensionDevelopmentPath=${workspaceRoot}",
-                "--extensionTestsPath=${workspaceRoot}/out/test"
+                "--extensionTestsPath=${workspaceRoot}/out/src/test"
             ],
             "stopOnEntry": false,
             "sourceMaps": true,
-            "outDir": "${workspaceRoot}/out/test",
+            "outDir": "${workspaceRoot}/out/src/test",
             "preLaunchTask": "npm"
         },
         {
@@ -36,13 +36,13 @@
             "runtimeArgs": [
                 "--harmony"
             ],
-            "program": "${workspaceRoot}/out/client/main.js",
+            "program": "${workspaceRoot}/out/src/client/main.js",
             "stopOnEntry": false,
             "args": [
                 "--server=4711"
             ],
             "sourceMaps": true,
-            "cwd": "${workspaceRoot}/out/client"
+            "cwd": "${workspaceRoot}/out/src/client"
         }
     ]
 }

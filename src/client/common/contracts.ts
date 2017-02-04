@@ -8,6 +8,7 @@ export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArgum
     stopOnEntry?: boolean;
     externalConsole?: boolean;
     debugOptions?: string[];
+    sourcePath?: string[];
     options?: string[];
 }
 

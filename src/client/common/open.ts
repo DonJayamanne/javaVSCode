@@ -1,5 +1,3 @@
-'use strict';
-
 //https://github.com/sindresorhus/opn/blob/master/index.js
 //Modified as this uses target as an argument
 

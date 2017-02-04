@@ -1,5 +1,3 @@
-'use strict';
-
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
@@ -139,6 +137,9 @@ export class JdbRunner extends EventEmitter {
     private initProc(port: number, hostname: string) {
         var jdbPath = this.args.jdkPath ? path.join(this.args.jdkPath, "jdb") : "jdb";
         var args = ["-connect", `com.sun.jdi.SocketAttach:hostname=${hostname},port=${port}`];
+        if (this.args.sourcePath) {
+            args = args.concat("-sourcepath", this.args.sourcePath.join(path.delimiter));
+        }
         this.jdbProc = child_process.spawn(jdbPath, args, {
             cwd: this.args.cwd
         });
@@ -146,9 +147,13 @@ export class JdbRunner extends EventEmitter {
             this.onDataReceived(data);
         });
         this.jdbProc.stderr.on("data", (data) => {
-            var message = data;
+            let message: string;
             if (data instanceof Error) {
                 message = (<Error>data).name + ": " + (<Error>data).message;
+            } else if (data instanceof Buffer) {
+                message = data.toString('utf-8');
+            } else {
+                message = data;
             }
             if (this.javaServerAppStarted && this.readyToAcceptCommands) {
                 this.debugSession.sendEvent(new OutputEvent(message, "error"));
@@ -163,9 +168,11 @@ export class JdbRunner extends EventEmitter {
         });
         this.jdbProc.on("error", (data) => {
             if (this.javaServerAppStarted && this.readyToAcceptCommands) {
-                var message = data;
+                var message: string;
                 if (data instanceof Error) {
                     message = (<Error>data).name + ": " + (<Error>data).message;
+                } else {
+                    message = data;
                 }
                 this.debugSession.sendEvent(new OutputEvent("jdb Error " + message, "error"));
             }
@@ -227,7 +234,7 @@ export class JdbRunner extends EventEmitter {
             return;
         }
         this.javaProc.stdout.on("data", (data) => {
-            var dataStr = new Buffer(data).toString('utf-8');
+            var dataStr = data.toString();
             if (this.javaServerAppStarted && this.readyToAcceptCommands) {
                 if (!this.args.externalConsole) {
                     this.debugSession.sendEvent(new OutputEvent(dataStr));
@@ -252,7 +259,7 @@ export class JdbRunner extends EventEmitter {
             this.onDataReceived("", true);
         });
         this.javaProc.stderr.on("data", (data) => {
-            var message = new Buffer(data).toString('utf-8');
+            var message = data.toString();
             if (this.javaServerAppStarted && this.readyToAcceptCommands) {
                 this.debugSession.sendEvent(new OutputEvent(message, "stderr"));
             }

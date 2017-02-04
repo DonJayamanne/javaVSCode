@@ -1,15 +1,15 @@
-'use strict';
-
 import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles} from 'vscode-debugadapter';
 import {DebugProtocol} from 'vscode-debugprotocol';
+import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
+
 import * as child_process from 'child_process';
 import {JdbRunner, JdbCommandType} from './jdb';
 import {LaunchRequestArguments, IJavaEvaluationResult, IJavaStackFrame, IJavaThread, JavaEvaluationResultFlags, IDebugVariable, ICommand, IStackInfo} from './common/contracts';
-const LineByLineReader = require('line-by-line');
-const namedRegexp = require('named-js-regexp');
+import LineByLineReader = require('line-by-line');
+import namedRegexp = require('named-js-regexp');
 const ARRAY_ELEMENT_REGEX = new RegExp("^\\w+.*\\[[0-9]+\\]$");
 interface IBreakpoint {
     className: string;
@@ -58,27 +58,29 @@ class JavaDebugSession extends DebugSession {
                 fullFileName = this.fileMapping.get(fileName);
             }
             else {
-                fullFileName = path.join(this.rootDir, fileName);
-                if (fs.existsSync(fullFileName)) {
-                    this.fileMapping.set(fileName, fullFileName);
-                }
-                else {
-                    fullFileName = fileName === "null" ? "" : fileName;
-                    this.fileMapping.set(fileName, fullFileName);
-
-                    //it is possibly a package
-                    var index = functionName.lastIndexOf(".");
-                    if (index > 0 && functionName.indexOf(".") < index) {
-                        var packageName = functionName.substring(0, index);
-                        packageName = path.basename(packageName, path.extname(packageName));
-                        var packagePath = packageName.split(".").reduce((previousValue, currentValue) => path.join(previousValue, currentValue), "");
-                        var packageFileName = path.join(this.rootDir, packagePath, fileName);
-                        if (fs.existsSync(packageFileName)) {
-                            this.fileMapping.set(fileName, packageFileName);
-                            fullFileName = packageFileName;
+                for (const sourceFolder of this.sourceFolders) {
+                    const testfullFileName = path.join(sourceFolder, fileName);
+                    if (fs.existsSync(testfullFileName)) {
+                        fullFileName = testfullFileName;
+                        this.fileMapping.set(fileName, fullFileName);
+                        break;
+                    } else {
+                        //it is possibly a package
+                        var index = functionName.lastIndexOf(".");
+                        if (index > 0 && functionName.indexOf(".") < index) {
+                            var packageName = functionName.substring(0, index);
+                            packageName = path.basename(packageName, path.extname(packageName));
+                            var packagePath = packageName.split(".").reduce((previousValue, currentValue) => path.join(previousValue, currentValue), "");
+                            var packageFileName = path.join(sourceFolder, packagePath, fileName);
+                            if (fs.existsSync(packageFileName)) {
+                                this.fileMapping.set(fileName, packageFileName);
+                                fullFileName = packageFileName;
+                                break;
+                            }
                         }
                     }
                 }
+                
             }
         }
         currentStack.fileName = fullFileName;
@@ -88,7 +90,7 @@ class JavaDebugSession extends DebugSession {
         return currentStack;
     }
     private jdbRunner: JdbRunner;
-    private rootDir: string;
+    private sourceFolders: string[];
     private launchResponse: DebugProtocol.LaunchResponse;
     private threads: IJavaThread[];
     private getThreadId(name: string): Promise<number> {
@@ -130,7 +132,11 @@ class JavaDebugSession extends DebugSession {
 
     protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
         this.launchResponse = response;
-        this.rootDir = args.cwd;
+        if (args.sourcePath) {
+            this.sourceFolders = args.sourcePath;
+        } else {
+            this.sourceFolders = [args.cwd];
+        }        
 
         this.jdbRunner = new JdbRunner(args, this);
 

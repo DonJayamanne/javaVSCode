@@ -23,7 +23,7 @@ E.g. configure the tasks.json file as follows and use run the build task.
 }
 ```
 
-##[Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
+## [Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
 * Enhancements to java debugger (pause and continue, etc)
 * Debugging of Multie Threaded apps is possible but very flaky. The debugger could at times hang.
 

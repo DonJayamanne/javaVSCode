@@ -22,6 +22,25 @@ E.g. configure the tasks.json file as follows and use run the build task.
     ]
 }
 ```
+Example launch configuration (launch.json):
+```
+{
+    "name": "Java",
+    "type": "java",
+    "request": "launch",
+    "stopOnEntry": true,      
+    "preLaunchTask": "build",                          // Runs the task created above before running this configuration
+    "jdkPath": "${env:JAVA_HOME}/bin",      
+    "cwd": "${workspaceRoot}",
+    "startupClass": "my.package.MyMainClass",          // The class you want to urn
+    "sourcePath": ["${workspaceRoot}/src/my/package"], // Indicates where your source (.java) files are
+    "options": [
+      "-classpath", "${workspaceRoot}/bin"             // Idicates the location of your .class files
+    ]
+}
+```
+
+
 
 ## [Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
 * Enhancements to java debugger (pause and continue, etc)

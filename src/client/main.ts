@@ -292,7 +292,7 @@ class JavaDebugSession extends DebugSession {
 
     protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
         this.jdbRunner.readyToAcceptBreakPoints.then(() => {
-            // If currentFile name changes then packageName will be set by PackageName.
+            // If currentFile name changes then packageName will be set by getPackageName.
             if (this.currentFile === "") {
                 this.currentFile = args.source.path;
             } else if (this.currentFile !== args.source.path) {

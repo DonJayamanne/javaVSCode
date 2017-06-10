@@ -25,11 +25,17 @@ class JavaDebugSession extends DebugSession {
     private registeredBreakpointsByFileName: Map<string, IBreakpoint[]>;
     private variableHandles: Handles<IDebugVariable>;
     private commands: ICommand[] = [];
+    
+    // Save packageName and currentFile path for future changes
+    private currentFile: string;
+    private packageName: string;
 
     public constructor(debuggerLinesStartAt1: boolean, isServer: boolean) {
         super(debuggerLinesStartAt1, isServer === true);
         this.variableHandles = new Handles<IDebugVariable>();
         this.registeredBreakpointsByFileName = new Map<string, IBreakpoint[]>();
+        this.packageName = "";
+        this.currentFile = "";
     }
 
     protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -140,7 +146,7 @@ class JavaDebugSession extends DebugSession {
             this.sourceFolders = args.sourcePath;
         } else {
             this.sourceFolders = [args.cwd];
-        }        
+        }
 
         this.jdbRunner = new JdbRunner(args, this);
 
@@ -271,22 +277,52 @@ class JavaDebugSession extends DebugSession {
             });
         });
     }
+
+    private getPackageName(file: string) {
+        let packageName = "", regex: RegExp, match: RegExpMatchArray;
+        let data = fs.readFileSync(file);
+        console.error("Getting packageName...");
+        // Search package keyword inside java source and then extract packageName
+        if (data.indexOf('package') >= 0) {
+            regex = /package (.*);/g;
+            match = regex.exec(data.toString());
+            packageName = match[1];
+        }
+        return packageName;
+    }
+
     protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
         this.jdbRunner.readyToAcceptBreakPoints.then(() => {
-            if (!this.registeredBreakpointsByFileName.has(args.source.path)) {
-                this.registeredBreakpointsByFileName.set(args.source.path, []);
+            // If currentFile name changes then packageName will be empty.
+            if (this.currentFile === "") {
+                this.currentFile = args.source.path;
+            } else if (this.currentFile !== args.source.path) {
+                this.packageName === ""
             }
-            let linesWithBreakPointsForFile = this.registeredBreakpointsByFileName.get(args.source.path);
+            if (!this.registeredBreakpointsByFileName.has(this.currentFile)) {
+                this.registeredBreakpointsByFileName.set(this.currentFile, []);
+            }
+            let linesWithBreakPointsForFile = this.registeredBreakpointsByFileName.get(this.currentFile);
 
-            let className = path.basename(args.source.path);
+            let className = path.basename(this.currentFile);
             className = className.substring(0, className.length - path.extname(className).length);
+            "".length > 0;
+            // Save packageName for currentFile
+            if (this.packageName === "") {
+                let packageName = this.getPackageName(this.currentFile);
+                this.packageName = packageName;
+            }
+            // Add packageName to className only if packageName is found
+            if (this.packageName.length > 0) {
+                className = `${this.packageName}.${className}`;
+            }
             //Add breakpoints for lines that are new
             let newBreakpoints = args.breakpoints.filter(bk => !linesWithBreakPointsForFile.some(item => item.line === bk.line));
             let addBreakpoints = newBreakpoints.map(bk => {
                 return new Promise<{ threadName: string, line: number, verified: boolean }>(resolve => {
                     this.jdbRunner.sendCmd(`stop at ${className}:${bk.line}`, JdbCommandType.SetBreakpoint).then(resp => {
                         if (resp.data.length > 0 && resp.data.some(value => value.indexOf("Unable to set breakpoint") >= 0)) {
-                            this.getClasseNames(args.source.path, bk.line).then(classNames => {
+                            this.getClasseNames(this.currentFile, bk.line).then(classNames => {
                                 this.setBreakPoint(classNames, bk.line)
                                     .then(bkResp => {
                                         //Keep track of this valid breakpoint
@@ -320,7 +356,7 @@ class JavaDebugSession extends DebugSession {
                 //Re-build the list of valid breakpoints
                 //remove the invalid list of breakpoints
                 linesWithBreakPointsForFile = linesWithBreakPointsForFile.filter(bk => !redundantBreakpoints.some(rbk => rbk.line === bk.line));
-                this.registeredBreakpointsByFileName.set(args.source.path, linesWithBreakPointsForFile);
+                this.registeredBreakpointsByFileName.set(this.currentFile, linesWithBreakPointsForFile);
 
                 //Return the breakpoints
                 let unVerifiedBreakpoints = args.breakpoints.filter(bk => !linesWithBreakPointsForFile.some(verifiedBk => verifiedBk.line === bk.line));

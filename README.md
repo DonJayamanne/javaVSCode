@@ -32,7 +32,7 @@ Example launch configuration (launch.json):
     "preLaunchTask": "build",                 // Runs the task created above before running this configuration
     "jdkPath": "${env:JAVA_HOME}/bin",        // You need to set JAVA_HOME enviroment variable
     "cwd": "${workspaceRoot}",
-    "startupClass": "my.package.MyMainClass", // The class you want to urn
+    "startupClass": "my.package.MyMainClass", // The class you want to run
     "sourcePath": ["${workspaceRoot}/src"],   // Indicates where your source (.java) files are
     "options": [
       "-classpath", "${workspaceRoot}/bin"    // Idicates the location of your .class files

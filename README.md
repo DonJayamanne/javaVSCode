@@ -23,19 +23,19 @@ E.g. configure the tasks.json file as follows and use run the build task.
 }
 ```
 Example launch configuration (launch.json):
-```
+```javascript
 {
     "name": "Java",
     "type": "java",
     "request": "launch",
     "stopOnEntry": true,      
-    "preLaunchTask": "build",                          // Runs the task created above before running this configuration
-    "jdkPath": "${env:JAVA_HOME}/bin",      
+    "preLaunchTask": "build",                 // Runs the task created above before running this configuration
+    "jdkPath": "${env:JAVA_HOME}/bin",        // You need to set JAVA_HOME enviroment variable
     "cwd": "${workspaceRoot}",
-    "startupClass": "my.package.MyMainClass",          // The class you want to urn
-    "sourcePath": ["${workspaceRoot}/src/my/package"], // Indicates where your source (.java) files are
+    "startupClass": "my.package.MyMainClass", // The class you want to run
+    "sourcePath": ["${workspaceRoot}/src"],   // Indicates where your source (.java) files are
     "options": [
-      "-classpath", "${workspaceRoot}/bin"             // Idicates the location of your .class files
+      "-classpath", "${workspaceRoot}/bin"    // Idicates the location of your .class files
     ]
 }
 ```

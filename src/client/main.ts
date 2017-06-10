@@ -281,7 +281,6 @@ class JavaDebugSession extends DebugSession {
     private getPackageName(file: string) {
         let packageName = "", regex: RegExp, match: RegExpMatchArray;
         let data = fs.readFileSync(file);
-        console.error("Getting packageName...");
         // Search package keyword inside java source and then extract packageName
         if (data.indexOf('package') >= 0) {
             regex = /package (.*);/g;
@@ -293,11 +292,11 @@ class JavaDebugSession extends DebugSession {
 
     protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
         this.jdbRunner.readyToAcceptBreakPoints.then(() => {
-            // If currentFile name changes then packageName will be empty.
+            // If currentFile name changes then packageName will be set by PackageName.
             if (this.currentFile === "") {
                 this.currentFile = args.source.path;
             } else if (this.currentFile !== args.source.path) {
-                this.packageName === ""
+                this.packageName = this.getPackageName(this.currentFile);
             }
             if (!this.registeredBreakpointsByFileName.has(this.currentFile)) {
                 this.registeredBreakpointsByFileName.set(this.currentFile, []);
@@ -306,12 +305,6 @@ class JavaDebugSession extends DebugSession {
 
             let className = path.basename(this.currentFile);
             className = className.substring(0, className.length - path.extname(className).length);
-            "".length > 0;
-            // Save packageName for currentFile
-            if (this.packageName === "") {
-                let packageName = this.getPackageName(this.currentFile);
-                this.packageName = packageName;
-            }
             // Add packageName to className only if packageName is found
             if (this.packageName.length > 0) {
                 className = `${this.packageName}.${className}`;

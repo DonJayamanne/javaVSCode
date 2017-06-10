@@ -2,7 +2,7 @@
   "name": "javadebugger",
   "displayName": "Java Debugger",
   "description": "Java Debugger (break points, variables, stack trace etc)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "donjayamanne",
   "engines": {
     "vscode": "^1.6.0"

@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/DonJayamanne/javaVSCode/issues"
   },
-  "icon": "images/icon.png",
+  "icon": "images/icon.svg",
   "main": "./out/src/client/extension",
   "contributes": {
     "debuggers": [

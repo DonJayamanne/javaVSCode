@@ -54,11 +54,10 @@ Example launch configuration (launch.json):
 * JDK is installed (version 1.7.0 and later)
  + Path to jdk is configured in launch.json
 
-## [Change Log](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
-### Version 0.1.0 (5 February 2017)
-* Add support for Maven [#25](https://github.com/DonJayamanne/javaVSCode/pull/25)  
-* Add preliminary support for remote debugging [#24](https://github.com/DonJayamanne/javaVSCode/pull/24)  
-* Add ability to define (source) path to JDB [#23](https://github.com/DonJayamanne/javaVSCode/pull/23)  
+## Release Notes
+
+See [Change 
+Log](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
 
 ## Thanks
 * [llgcode](https://github.com/llgcode)  

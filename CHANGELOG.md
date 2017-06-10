@@ -1,6 +1,7 @@
-### Version 0.1.1 (10 June 2017)
+### Version 0.1.2 (10 June 2017)
 * Add support for breakpoints when use package [#42](https://github.com/DonJayamanne/javaVSCode/pull/42)
 * Fix some typos and behaviors [#43](https://github.com/DonJayamanne/javaVSCode/pull/43)
+* Add white border to icon
 
 ### Version 0.1.0 (5 February 2017)
 * Add support for Maven [#25](https://github.com/DonJayamanne/javaVSCode/pull/25)  

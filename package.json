@@ -81,7 +81,7 @@
                   "type": "string"
                 },
                 "default": [],
-                "description": "Options to be passed to the java executable (java)."
+                "description": "Options to be passed to the java executable (java). -classpath option uses ';' as path separator in Windows and ':' in Unix"
               }
             }
           },
@@ -124,7 +124,7 @@
                   "type": "string"
                 },
                 "default": [],
-                "description": "Options to be passed to the java executable (java)."
+                "description": "Options to be passed to the java executable (java). -classpath option uses ';' as path separator in Windows and ':' in Unix"
               },
               "remoteHost": {
                 "type": "string",
@@ -147,10 +147,10 @@
             "stopOnEntry": true,
             "jdkPath": "${env:JAVA_HOME}/bin",
             "cwd": "${fileDirname}",
-            "startupClass": "${fileBasename}",
+            "startupClass": "${fileBasenameNoExtension}",
             "options": [
               "-classpath",
-              "\"${fileDirname};.\""
+              "${fileDirname};."
             ]
           },
           {
@@ -160,10 +160,10 @@
             "stopOnEntry": true,
             "jdkPath": "${env:JAVA_HOME}/bin",
             "cwd": "${fileDirname}",
-            "startupClass": "${fileBasename}",
+            "startupClass": "${fileBasenameNoExtension}",
             "options": [
               "-classpath",
-              "\"${fileDirname};.\""
+              "${fileDirname};."
             ],
             "externalConsole": true
           }

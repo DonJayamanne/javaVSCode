@@ -59,10 +59,7 @@ Example launch configuration (launch.json):
 See [Change 
 Log](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
 
-## Thanks
-* [llgcode](https://github.com/llgcode)  
-* [Dave](https://github.com/dlee-nvisia)
-* [Tyler Sedlar](https://github.com/TSedlar)
+## Big thanks to [Faustino Aguilar](https://github.com/faustinoaq)
 
 ## Source
 

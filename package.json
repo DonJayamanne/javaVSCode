@@ -67,7 +67,7 @@
                 "description": "Launch debug target in external console window.",
                 "default": false
               },
-              "sourcePath":{
+              "sourcePath": {
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -75,13 +75,21 @@
                 "default": [],
                 "description": "SourcePath to search source"
               },
+              "classpath": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Directories, zips, and jars containing the relevant .class files."
+              },
               "options": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
                 "default": [],
-                "description": "Options to be passed to the java executable (java). -classpath option uses ';' as path separator in Windows and ':' in Unix"
+                "description": "Options to be passed to the java executable (java). -classpath should be specified with the classpath option instead."
               }
             }
           },
@@ -118,13 +126,21 @@
                 "description": "Launch debug target in external console window.",
                 "default": false
               },
+              "classpath": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Directories, zips, and jars containing the relevant .class files."
+              },
               "options": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
                 "default": [],
-                "description": "Options to be passed to the java executable (java). -classpath option uses ';' as path separator in Windows and ':' in Unix"
+                "description": "Options to be passed to the java executable (java). -classpath should be specified with the classpath option instead."
               },
               "remoteHost": {
                 "type": "string",

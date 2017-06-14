@@ -28,15 +28,14 @@ Example launch configuration (launch.json):
     "name": "Java",
     "type": "java",
     "request": "launch",
-    "stopOnEntry": true,      
+    "stopOnEntry": true,
     "preLaunchTask": "build",                 // Runs the task created above before running this configuration
     "jdkPath": "${env:JAVA_HOME}/bin",        // You need to set JAVA_HOME enviroment variable
     "cwd": "${workspaceRoot}",
     "startupClass": "my.package.MyMainClass", // The class you want to run
     "sourcePath": ["${workspaceRoot}/src"],   // Indicates where your source (.java) files are
-    "options": [
-      "-classpath", "${workspaceRoot}/bin"    // Idicates the location of your .class files
-    ]
+    "classpath": ["${workspaceRoot}/bin"],    // Indicates the location of your .class files
+    "options": []                             // Additional options to pass to the java executable
 }
 ```
 
@@ -56,7 +55,7 @@ Example launch configuration (launch.json):
 
 ## Release Notes
 
-See [Change 
+See [Change
 Log](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
 
 ## Big thanks to [Faustino Aguilar](https://github.com/faustinoaq)
@@ -64,7 +63,7 @@ Log](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
 ## Source
 
 [Github](https://github.com/DonJayamanne/javaVSCode)
-                
+
 ## License
 
 [MIT](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/LICENSE)

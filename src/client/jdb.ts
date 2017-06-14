@@ -11,7 +11,7 @@ import {WaitForPortToOpen} from './common/waitForPortToOpen';
 
 const JAVA_APPLICATION_EXITED = "The application exited";
 const STARTS_WITH_THREAD_NAME_REGEX = new RegExp("^\\w+.*\\[[0-9]+\\] .*");
-//Some times the console prompt seems to end with the thread name twice!!! No idea why 
+//Some times the console prompt seems to end with the thread name twice!!! No idea why
 const IS_THREAD_NAME_REGEX = new RegExp("^(.+\\[[0-9]+\\]\s*)+ $");
 export interface IJdbCommandResponse {
     threadName: string;
@@ -101,7 +101,7 @@ export class JdbRunner extends EventEmitter {
             this.readyToAcceptBreakPointsResolve = resolve;
         });
         if (isAttachRequestArguments(args)) {
-            
+
             if (! args.remoteHost) {
                 args.remoteHost = "localhost";
             }
@@ -198,8 +198,18 @@ export class JdbRunner extends EventEmitter {
             });
 
             var javaPath = (!this.args.jdkPath || this.args.jdkPath.length === 0) ? "java" : path.join(this.args.jdkPath, "java");
-            var options = this.args.options;
-            var args = [`-agentlib:jdwp=transport=dt_socket,server=y,address=${port}`].concat(options).concat(this.className);
+            var classpath = this.args.classpath || [];
+            var classpathOptions = [];
+            if (classpath.length > 0) {
+                classpathOptions = ["-classpath", classpath.join(os.platform() === "win32" ? ";" : ":")];
+            }
+            var options = this.args.options || [];
+            if (options.indexOf("-classpath") !== -1 || options.indexOf("-cp") !== -1) {
+                this.debugSession.sendEvent(
+                    new OutputEvent("Warning: Specifying -classpath in options of launch.json is deprecated. Please use the classpath option instead.", "warning")
+                );
+            }
+            var args = [`-agentlib:jdwp=transport=dt_socket,server=y,address=${port}`].concat(classpathOptions).concat(options).concat(this.className);
             if (this.args.externalConsole === true) {
                 open({ wait: false, app: [javaPath].concat(args), cwd: this.args.cwd }).then(proc => {
                     this.javaProc = proc;
@@ -439,7 +449,7 @@ export class JdbRunner extends EventEmitter {
             case JdbCommandType.SetBreakpoint: {
                 //If we haven't yet sent the run command, that means we're still dealing with breakpoints
                 if (!this.runCommandSent && lastCmd.type === JdbCommandType.SetBreakpoint) {
-                    //Breakpoint could have been deferred 
+                    //Breakpoint could have been deferred
                     //Find the end of the command response
                     // let endResponse = lines.findIndex(line => IS_THREAD_NAME_REGEX.test(line.trim()));
                     // let endResponse = lines.findIndex(line => line.indexOf("[") > 0 && line.trim().endsWith("]"));
@@ -505,7 +515,7 @@ export class JdbRunner extends EventEmitter {
             //Anyways
 
             //Question is how on earth do we handle this situtation
-            //Proper Solution - use jpda (instead of jdb) 
+            //Proper Solution - use jpda (instead of jdb)
             return;
         }
 
@@ -521,7 +531,7 @@ export class JdbRunner extends EventEmitter {
 
         if (!this.checkRestOfTheResponse(lines, lastLine, 0, indexOfEndOfResponse, lastCmd)) {
             if (this.checkIfBreakpointWillBeHit(lines) || this.checkIfDebuggerWillStopDueToInvalidBreakPoints(lines)) {
-                //We could get more messages 
+                //We could get more messages
                 //Ok, this means there's more in the message
                 //I.e. we have a partial message in the response
                 //Find the index of the ">" or the threadName
@@ -560,7 +570,7 @@ export class JdbRunner extends EventEmitter {
 
         if (!this.checkRestOfTheResponse(lines, lastLine, 0, indexOfEndOfResponse, lastCmd)) {
             if (this.checkIfBreakpointWillBeHit(lines) || this.checkIfDebuggerWillStopDueToInvalidBreakPoints(lines)) {
-                //We could get more messages 
+                //We could get more messages
                 //Ok, this means there's more in the message
                 //I.e. we have a partial message in the response
                 //Find the index of the ">" or the threadName
@@ -600,7 +610,7 @@ export class JdbRunner extends EventEmitter {
         }
 
         //No need to check if theres an end
-        //If we have at least 2 lines for the response, then that's fine 
+        //If we have at least 2 lines for the response, then that's fine
         // let indexOfEndOfResponse = indexToStartFrom + 2;
         let indexOfEndOfResponse = lines.slice(indexToStartFrom + 1).findIndex(line => line.indexOf(">") === 0 || STARTS_WITH_THREAD_NAME_REGEX.test(line));
         if (indexOfEndOfResponse === -1) {
@@ -673,16 +683,16 @@ export class JdbRunner extends EventEmitter {
         if (this.runCommandSent && !this.runCommandCompleted && lastCmd.type === JdbCommandType.Run) {
             //This is a tricky one
             //Possible results include:
-            //1. The app is running and no breakpoints hit, nothing - code is running 
-            //>   
+            //1. The app is running and no breakpoints hit, nothing - code is running
+            //>
             //2. The debugger has initialized the breakpoint as the code is loaded
             //> Set deferred breakpoint Threading.main
             //Breakpoint hit: "threading=main", Threading.main(), lint=27 bci=0
             //27             CompileFromSockets(101);
-            //   
+            //
             //3. Breakpoints initialized and running
             //> Set deferred breakpoint MyClientThread:82
-            //    
+            //
 
             //Either way all we need to do is wait for the ">" and we know everything is know
             if (lines.length > 0 && lines.some(line => line.indexOf(">") >= 0)) {

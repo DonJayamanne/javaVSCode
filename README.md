@@ -55,8 +55,7 @@ Example launch configuration (launch.json):
 
 ## Release Notes
 
-See [Change
-Log](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
+See [ChangeLog](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
 
 ## Big thanks to [Faustino Aguilar](https://github.com/faustinoaq)
 

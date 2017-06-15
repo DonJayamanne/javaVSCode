@@ -50,7 +50,7 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
     } else {
         // It use xterm instead of xdg-open because is widely extended in distro world
         cmd = 'xterm';
-        args.push('+hold', '-e');
+        args.push('-hold', '-e');
 
         if (opts.app) {
             args.push(opts.app);

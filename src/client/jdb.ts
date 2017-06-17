@@ -206,7 +206,7 @@ export class JdbRunner extends EventEmitter {
             var options = this.args.options || [];
             if (options.indexOf("-classpath") !== -1 || options.indexOf("-cp") !== -1) {
                 this.debugSession.sendEvent(
-                    new OutputEvent("Warning: Specifying -classpath in options of launch.json is deprecated. Please use the classpath option instead.", "warning")
+                    new OutputEvent("Warning: Specifying -classpath in options of launch.json is deprecated. Please use the classpath option instead.", "console")
                 );
             }
             var args = [`-agentlib:jdwp=transport=dt_socket,server=y,address=${port}`].concat(classpathOptions).concat(options).concat(this.className);
@@ -253,7 +253,7 @@ export class JdbRunner extends EventEmitter {
             var dataStr = data.toString();
             if (this.javaServerAppStarted && this.readyToAcceptCommands) {
                 if (!this.args.externalConsole) {
-                    this.debugSession.sendEvent(new OutputEvent(dataStr));
+                    this.debugSession.sendEvent(new OutputEvent(dataStr, "stdout"));
                 }
             }
             else {

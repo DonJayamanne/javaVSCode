@@ -164,9 +164,9 @@
             "jdkPath": "${env:JAVA_HOME}/bin",
             "cwd": "${fileDirname}",
             "startupClass": "${fileBasenameNoExtension}",
-            "options": [
-              "-classpath",
-              "${fileDirname};."
+            "classpath": [
+              ".",
+              "${fileDirname}"
             ]
           },
           {
@@ -177,10 +177,10 @@
             "jdkPath": "${env:JAVA_HOME}/bin",
             "cwd": "${fileDirname}",
             "startupClass": "${fileBasenameNoExtension}",
-            "options": [
-              "-classpath",
-              "${fileDirname};."
-            ],
+            "classpath": [
+              ".",
+              "${fileDirname}"
+            ]
             "externalConsole": true
           }
         ]

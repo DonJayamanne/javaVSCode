@@ -34,11 +34,11 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
 
     } else if (process.platform === 'win32') {
         cmd = 'cmd';
-        args.push('/c', 'start', '');
+        args.push('/c', 'start', '', 'cmd', '/k');
 
         // if (opts.wait) {
-        args.push('/wait');
-        //  }
+        //    args.push('/wait');
+        // }
 
         if (opts.app) {
             args.push(opts.app);

@@ -13,6 +13,8 @@ const JAVA_APPLICATION_EXITED = "The application exited";
 const STARTS_WITH_THREAD_NAME_REGEX = new RegExp("^\\w+.*\\[[0-9]+\\] .*");
 //Some times the console prompt seems to end with the thread name twice!!! No idea why
 const IS_THREAD_NAME_REGEX = new RegExp("^(.+\\[[0-9]+\\]\s*)+ $");
+const IS_PROMPT = new RegExp("^> *$");
+
 export interface IJdbCommandResponse {
     threadName: string;
     data: string[];
@@ -367,28 +369,34 @@ export class JdbRunner extends EventEmitter {
         }
         var lastLine = lines[lines.length - 1];
 
-        if (this.executingCommands.length === 0 && lastLine.trim().endsWith("]") && this.outputBuffer.indexOf("VM Started") > 0 && !this.vmStarted) {
-            if (IS_THREAD_NAME_REGEX.test(lastLine)) {
-                this.lastThreadName = lastLine.substring(0, lastLine.indexOf("[")).trim()
+        if (this.executingCommands.length === 0 && !this.vmStarted) {
+            if (lastLine.trim().endsWith("]") && this.outputBuffer.indexOf("VM Started") > 0) {
+                this.vmStarted = true;
+            } else if (IS_PROMPT.test(lastLine)) {
+                this.vmStarted = true;
             }
-            this.vmStarted = true;
-            this.outputBuffer = "";
+            if (this.vmStarted) {
+                if (IS_THREAD_NAME_REGEX.test(lastLine)) {
+                    this.lastThreadName = lastLine.substring(0, lastLine.indexOf("[")).trim()
+                }
+                this.outputBuffer = "";
 
-            let startedPromise = Promise.resolve<IJdbCommandResponse>(null);
-            if (this.args.stopOnEntry) {
-                startedPromise = this.sendCmd(`stop in ${this.className}.main\n`, JdbCommandType.SetBreakpoint);
-            }
-            startedPromise.then(() => {
-                // Let this go into the queue, then we can start the program by sending the run command (after a few milli seconds)
-                this.runCommandSent = true;
-                this.sendCmd("run", JdbCommandType.Run).then(resp => {
-                    this.readyToAcceptCommands = true;
-                    this.jdbLoadedResolve(resp.threadName);
+                let startedPromise = Promise.resolve<IJdbCommandResponse>(null);
+                if (this.args.stopOnEntry) {
+                    startedPromise = this.sendCmd(`stop in ${this.className}.main\n`, JdbCommandType.SetBreakpoint);
+                }
+                startedPromise.then(() => {
+                    // Let this go into the queue, then we can start the program by sending the run command (after a few milli seconds)
+                    this.runCommandSent = true;
+                    this.sendCmd("run", JdbCommandType.Run).then(resp => {
+                        this.readyToAcceptCommands = true;
+                        this.jdbLoadedResolve(resp.threadName);
+                    });
                 });
-            });
-            //Next, ensure we can accept breakpoints
-            this.readyToAcceptBreakPointsResolve();
-            return;
+                //Next, ensure we can accept breakpoints
+                this.readyToAcceptBreakPointsResolve();
+                return;
+            }
         }
         if (!this.vmStarted) {
             return;
@@ -454,7 +462,7 @@ export class JdbRunner extends EventEmitter {
                     // let endResponse = lines.findIndex(line => IS_THREAD_NAME_REGEX.test(line.trim()));
                     // let endResponse = lines.findIndex(line => line.indexOf("[") > 0 && line.trim().endsWith("]"));
                     // if (endResponse >= 0) {
-                    if (IS_THREAD_NAME_REGEX.test(lastLine)) {
+                    if (IS_THREAD_NAME_REGEX.test(lastLine) || IS_PROMPT.test(lastLine)) {
                         this.outputBuffer = "";
                         //Note, at this point the main thread is still the same as it was when the debugger loaded, most likely "main[1]""
                         this.sendResponseForLastCommand(lastCmd, lines);
@@ -507,7 +515,7 @@ export class JdbRunner extends EventEmitter {
         //We're now looking for a line that starts with ">" or "main[1]" (thread name)
         // let indexOfEndOfResponse = lines.findIndex(line => line.indexOf(">") === 0 || STARTS_WITH_THREAD_NAME_REGEX.test(line));
         var reversedArray = lines.slice().reverse();
-        let indexOfEndOfResponse = reversedArray.findIndex(line => line.startsWith(this.lastThreadName + "[") || IS_THREAD_NAME_REGEX.test(line));
+        let indexOfEndOfResponse = reversedArray.findIndex(line => line.startsWith(this.lastThreadName + "[") || IS_THREAD_NAME_REGEX.test(line) || IS_PROMPT.test(line));
         if (indexOfEndOfResponse === -1) {
             //However sometimes, we have breakpoints being hit, and the response gets mangled pause
             //We have the text "Breakpoint hit: Group System: .." (responses for multiple commands getting mixed)

@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/DonJayamanne/javaVSCode/issues"
   },
-  "icon": "images/icon.svg",
+  "icon": "images/icon.png",
   "main": "./out/src/client/extension",
   "contributes": {
     "debuggers": [
@@ -90,6 +90,14 @@
                 },
                 "default": [],
                 "description": "Options to be passed to the java executable (java). -classpath should be specified with the classpath option instead."
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Command line arguments passed to the startup  class."
               }
             }
           },
@@ -180,7 +188,7 @@
             "classpath": [
               ".",
               "${fileDirname}"
-            ]
+            ],
             "externalConsole": true
           }
         ]

@@ -11,6 +11,7 @@ export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArgum
     sourcePath?: string[];
     classpath?: string[];
     options?: string[];
+    args?: string[];
 }
 
 export interface AttachRequestArguments extends LaunchRequestArguments {

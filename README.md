@@ -36,6 +36,7 @@ Example launch configuration (launch.json):
     "sourcePath": ["${workspaceRoot}/src"],   // Indicates where your source (.java) files are
     "classpath": ["${workspaceRoot}/bin"],    // Indicates the location of your .class files
     "options": []                             // Additional options to pass to the java executable
+    "args": []                                // Command line arguments to pass to the startup class
 }
 ```
 

@@ -209,7 +209,7 @@ export class JdbRunner extends EventEmitter {
                     new OutputEvent("Warning: Specifying -classpath in options of launch.json is deprecated. Please use the classpath option instead.", "console")
                 );
             }
-            var args = [`-agentlib:jdwp=transport=dt_socket,server=y,address=${port}`].concat(classpathOptions).concat(options).concat(this.className);
+            var args = [`-agentlib:jdwp=transport=dt_socket,server=y,address=${port}`].concat(classpathOptions).concat(options).concat(this.className).concat(this.args.args || []);
             if (this.args.externalConsole === true) {
                 open({ wait: false, app: [javaPath].concat(args), cwd: this.args.cwd }).then(proc => {
                     this.javaProc = proc;

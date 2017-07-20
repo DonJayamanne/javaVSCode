@@ -1,3 +1,10 @@
+### Version 0.1.3 (20 July 2017)
+* Fix options generated in launch.json [#37](https://github.com/DonJayamanne/javaVSCode/issues/37), [#45](https://github.com/DonJayamanne/javaVSCode/pull/45)  
+* Fix wait behavior when using external console on Linux [#45](https://github.com/DonJayamanne/javaVSCode/pull/47)  
+* Format output [#48](https://github.com/DonJayamanne/javaVSCode/pull/48)  
+* Keep windows open after debugging in windows using cmd /k like -hold option in xterm. [#50](https://github.com/DonJayamanne/javaVSCode/pull/50), [#46](https://github.com/DonJayamanne/javaVSCode/issues/46#issuecomment-308892264)  
+* Ability to pass command line arguments [#21](https://github.com/DonJayamanne/javaVSCode/issues/21), [#55](https://github.com/DonJayamanne/javaVSCode/pull/55)  
+
 ### Version 0.1.2 (10 June 2017)
 * Add support for breakpoints when use package [#42](https://github.com/DonJayamanne/javaVSCode/pull/42)
 * Fix some typos and behaviors [#43](https://github.com/DonJayamanne/javaVSCode/pull/43)

@@ -2,10 +2,10 @@
   "name": "javadebugger",
   "displayName": "Java Debugger",
   "description": "Java Debugger (break points, variables, stack trace etc)",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publisher": "donjayamanne",
   "engines": {
-    "vscode": "^1.6.0"
+    "vscode": "^1.9.0"
   },
   "categories": [
     "Debuggers"
@@ -49,13 +49,13 @@
               },
               "startupClass": {
                 "type": "string",
-                "description": "startup class (this will deault to the current file name)",
+                "description": "startup class (this will default to the current file name)",
                 "default": "${fileBasename}"
               },
               "jdkPath": {
                 "type": "string",
                 "description": "Path JDK directory.",
-                "default": ""
+                "default": "${env:JAVA_HOME}/bin"
               },
               "stopOnEntry": {
                 "type": "boolean",
@@ -67,7 +67,7 @@
                 "description": "Launch debug target in external console window.",
                 "default": false
               },
-              "sourcePath":{
+              "sourcePath": {
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -75,13 +75,29 @@
                 "default": [],
                 "description": "SourcePath to search source"
               },
+              "classpath": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Directories, zips, and jars containing the relevant .class files."
+              },
               "options": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
                 "default": [],
-                "description": "Options to be passed to the java executable (java)."
+                "description": "Options to be passed to the java executable (java). -classpath should be specified with the classpath option instead."
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Command line arguments passed to the startup  class."
               }
             }
           },
@@ -106,7 +122,7 @@
               "jdkPath": {
                 "type": "string",
                 "description": "Path JDK directory.",
-                "default": ""
+                "default": "${env:JAVA_HOME}/bin"
               },
               "stopOnEntry": {
                 "type": "boolean",
@@ -118,13 +134,21 @@
                 "description": "Launch debug target in external console window.",
                 "default": false
               },
+              "classpath": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Directories, zips, and jars containing the relevant .class files."
+              },
               "options": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
                 "default": [],
-                "description": "Options to be passed to the java executable (java)."
+                "description": "Options to be passed to the java executable (java). -classpath should be specified with the classpath option instead."
               },
               "remoteHost": {
                 "type": "string",
@@ -145,11 +169,12 @@
             "type": "java",
             "request": "launch",
             "stopOnEntry": true,
+            "jdkPath": "${env:JAVA_HOME}/bin",
             "cwd": "${fileDirname}",
-            "startupClass": "${fileBasename}",
-            "options": [
-              "-classpath",
-              "\"${fileDirname};.\""
+            "startupClass": "${fileBasenameNoExtension}",
+            "classpath": [
+              ".",
+              "${fileDirname}"
             ]
           },
           {
@@ -157,11 +182,12 @@
             "type": "java",
             "request": "launch",
             "stopOnEntry": true,
+            "jdkPath": "${env:JAVA_HOME}/bin",
             "cwd": "${fileDirname}",
-            "startupClass": "${fileBasename}",
-            "options": [
-              "-classpath",
-              "\"${fileDirname};.\""
+            "startupClass": "${fileBasenameNoExtension}",
+            "classpath": [
+              ".",
+              "${fileDirname}"
             ],
             "externalConsole": true
           }
@@ -170,23 +196,23 @@
     ]
   },
   "scripts": {
-		"vscode:prepublish": "tsc -p ./",
-		"compile": "tsc -watch -p ./",
-		"postinstall": "node ./node_modules/vscode/bin/install",
-		"test": "node ./node_modules/vscode/bin/test"
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "node ./node_modules/vscode/bin/test"
   },
   "devDependencies": {
-		"@types/node": "^6.0.50",
-		"typescript": "^2.0.10",
-		"mocha": "^3.1.2",
-		"vscode": "^1.0.3",
-		"vscode-debugadapter-testsupport": "^1.15.0"
+    "@types/node": "^6.0.50",
+    "typescript": "^2.3.2",
+    "mocha": "^3.1.2",
+    "vscode": "^1.0.3",
+    "vscode-debugadapter-testsupport": "^1.15.0"
   },
   "dependencies": {
     "get-port": "^2.1.0",
     "line-by-line": "^0.1.4",
     "named-js-regexp": "^1.3.1",
     "vscode-debugprotocol": "^1.15.0",
-		"vscode-debugadapter": "^1.15.0"
+    "vscode-debugadapter": "^1.15.0"
   }
 }

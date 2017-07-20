@@ -34,11 +34,11 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
 
     } else if (process.platform === 'win32') {
         cmd = 'cmd';
-        args.push('/c', 'start', '');
+        args.push('/c', 'start', '', 'cmd', '/k');
 
         // if (opts.wait) {
-        args.push('/wait');
-        //  }
+        //    args.push('/wait');
+        // }
 
         if (opts.app) {
             args.push(opts.app);
@@ -48,10 +48,12 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
             args = args.concat(appArgs);
         }
     } else {
+        // It use xterm instead of xdg-open because is widely extended in distro world
+        cmd = 'xterm';
+        args.push('-hold', '-e');
+
         if (opts.app) {
-            cmd = opts.app;
-        } else {
-            cmd = path.join(__dirname, 'xdg-open');
+            args.push(opts.app);
         }
 
         if (appArgs.length > 0) {
@@ -61,7 +63,7 @@ export function open(opts: any): Promise<childProcess.ChildProcess> {
         if (!opts.wait) {
             // xdg-open will block the process unless
             // stdio is ignored even if it's unref'd
-            cpOpts.stdio = 'ignore';
+            // cpOpts.stdio = 'ignore';
         }
     }
 

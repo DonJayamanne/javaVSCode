@@ -22,8 +22,27 @@ E.g. configure the tasks.json file as follows and use run the build task.
     ]
 }
 ```
+Example launch configuration (launch.json):
+```javascript
+{
+    "name": "Java",
+    "type": "java",
+    "request": "launch",
+    "stopOnEntry": true,
+    "preLaunchTask": "build",                 // Runs the task created above before running this configuration
+    "jdkPath": "${env:JAVA_HOME}/bin",        // You need to set JAVA_HOME enviroment variable
+    "cwd": "${workspaceRoot}",
+    "startupClass": "my.package.MyMainClass", // The class you want to run
+    "sourcePath": ["${workspaceRoot}/src"],   // Indicates where your source (.java) files are
+    "classpath": ["${workspaceRoot}/bin"],    // Indicates the location of your .class files
+    "options": []                             // Additional options to pass to the java executable
+    "args": []                                // Command line arguments to pass to the startup class
+}
+```
 
-##[Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
+
+
+## [Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
 * Enhancements to java debugger (pause and continue, etc)
 * Debugging of Multie Threaded apps is possible but very flaky. The debugger could at times hang.
 
@@ -35,21 +54,16 @@ E.g. configure the tasks.json file as follows and use run the build task.
 * JDK is installed (version 1.7.0 and later)
  + Path to jdk is configured in launch.json
 
-## [Change Log](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
-### Version 0.1.0 (5 February 2017)
-* Add support for Maven [#25](https://github.com/DonJayamanne/javaVSCode/pull/25)  
-* Add preliminary support for remote debugging [#24](https://github.com/DonJayamanne/javaVSCode/pull/24)  
-* Add ability to define (source) path to JDB [#23](https://github.com/DonJayamanne/javaVSCode/pull/23)  
+## Release Notes
 
-## Thanks
-* [llgcode](https://github.com/llgcode)  
-* [Dave](https://github.com/dlee-nvisia)
-* [Tyler Sedlar](https://github.com/TSedlar)
+See [ChangeLog](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
+
+## Big thanks to [Faustino Aguilar](https://github.com/faustinoaq)
 
 ## Source
 
 [Github](https://github.com/DonJayamanne/javaVSCode)
-                
+
 ## License
 
 [MIT](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/LICENSE)

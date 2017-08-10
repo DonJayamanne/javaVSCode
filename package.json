@@ -134,6 +134,14 @@
                 "description": "Launch debug target in external console window.",
                 "default": false
               },
+              "sourcePath": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "SourcePath to search source"
+              },
               "classpath": {
                 "type": "array",
                 "items": {

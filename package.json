@@ -98,6 +98,11 @@
                 },
                 "default": [],
                 "description": "Command line arguments passed to the startup  class."
+              },
+              "listenerMessage": {
+                "type": "string",
+                "description": "expected output of the debugged java process (use '-' if your JVM doesn't print a message like 'Listening for transport...')",
+                "default": "Listening for transport"
               }
             }
           },

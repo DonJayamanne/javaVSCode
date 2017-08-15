@@ -251,6 +251,14 @@ export class JdbRunner extends EventEmitter {
                 });
             return;
         }
+
+        if (this.args.listenerMessage == null) {
+            this.args.listenerMessage = "Listening for transport";
+        } else if (this.args.listenerMessage == "-") {
+            this.javaServerAppStarted = true;
+            this.javaLoadedResolve(port);
+        }
+
         this.javaProc.stdout.on("data", (data) => {
             var dataStr = data.toString();
             if (this.javaServerAppStarted && this.readyToAcceptCommands) {
@@ -260,7 +268,7 @@ export class JdbRunner extends EventEmitter {
             }
             else {
                 accumulatedData += dataStr;
-                if (accumulatedData.indexOf("Listening for transport") === 0 && accumulatedData.trim().endsWith(port.toString())) {
+                if (accumulatedData.indexOf(this.args.listenerMessage) === 0 && accumulatedData.trim().endsWith(port.toString())) {
                     accumulatedData = "";
                     this.javaServerAppStarted = true;
                     this.javaLoadedResolve(port);

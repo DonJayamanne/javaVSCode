@@ -5,6 +5,7 @@ export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArgum
     cwd: string;
     startupClass: string;
     jdkPath?: string;
+    listenerMessage?: string;
     stopOnEntry?: boolean;
     externalConsole?: boolean;
     debugOptions?: string[];

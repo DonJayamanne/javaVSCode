@@ -73,11 +73,13 @@ Inspect variables, set breakpoints and see output in console.
 
 * Enhancements to java debugger (pause and continue, etc)
 * Debugging of Multie Threaded apps is possible but very flaky. The debugger could at times hang.
+* Exceptions support [#46](https://github.com/DonJayamanne/javaVSCode/issues/46)
 
 ## Known issues
 
-* Can't use integrated terminal yet.
-* Sometimes debugger shows nothing, try to restart it.
+* Can't use integrated terminal yet. [#71](https://github.com/DonJayamanne/javaVSCode/issues/71)
+* Sometimes debugger shows nothing, try to restart it. [#27](https://github.com/DonJayamanne/javaVSCode/issues/27)
+* Debugging Spring Boot Applications, [#13](https://github.com/DonJayamanne/javaVSCode/issues/13)
 
 ## Release Notes
 
@@ -91,7 +93,7 @@ See [ChangeLog](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG
 4. Push to the branch `git push origin my-new-feature`
 5. Create a new Pull Request
 
-## Contribuitors
+## Contributors
 
 - [DonJayamanne](https://github.com/DonJayamanne/) Don Jayamanne - creator, maintainer
 - [faustinoaq](https://github.com/faustinoaq) Faustino Aguilar - contribuitor
@@ -101,6 +103,7 @@ See [ChangeLog](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG
 - [TSedlar](https://github.com/TSedlar) Tyler Sedlar - contribuitor
 - [rianadon](https://github.com/rianadon) rianadon - contribuitor
 - [llgcode](https://github.com/llgcode) llgcode - contribuitor
+- [khe817](khe817) Ngan Bui - contribuitor
 
 ## Source
 

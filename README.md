@@ -2,7 +2,7 @@
 
 ![java-debugger](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/icon.png)
 
-Local variables, arguments, stack trace, step through, partial support for JavaFX, expanding values (Objects, Arrays) etc.
+Java debugger extension for VSCode with support for debugging Local variables, arguments, stack trace, step through, partial support for JavaFX, expanding values (Objects, Arrays) etc.
 
 ## Requirements
 
@@ -11,13 +11,14 @@ Local variables, arguments, stack trace, step through, partial support for JavaF
 * JDK is installed (version 1.7.0 and later)
 
 Once installed, do remember to configure the JDK Path (in launch.json, else jdk path is assumed to be in the current path)
-Ensure to compile the source code with debug symbols.
 
-Configure the `tasks.json` file as follows and use run the build task.
+**Ensure to compile the source code with debug symbols.**
 
-> Note: `-g` is needed to compile your code with debugging support, allowing to see variables value
+Debug info is needed to compile your code with debugging support, allowing to see variables value
 
 ![variables](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/variables.png)
+
+You can configure the `tasks.json` file as follows and use run the build task. see `-g` flag in command.
 
 ```json
 {
@@ -36,7 +37,7 @@ Configure the `tasks.json` file as follows and use run the build task.
 }
 ```
 
-Example launch configuration (`launch.json`):
+Then you need to add a launch configuration (`launch.json`):
 
 ```javascript
 {
@@ -55,11 +56,9 @@ Example launch configuration (`launch.json`):
 }
 ```
 
-## Features
-
-Easy debugger settings.
-
 ![Image of Debugging](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/debug.gif)
+
+## Features
 
 Debug GUI applications.
 
@@ -97,13 +96,13 @@ See [ChangeLog](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG
 
 - [DonJayamanne](https://github.com/DonJayamanne/) Don Jayamanne - creator, maintainer
 - [faustinoaq](https://github.com/faustinoaq) Faustino Aguilar - contribuitor
-- [Sel-en-ium](https://github.com/Sel-en-ium) Sel-en-ium - contribuitor
 - [lacivert](https://github.com/lacivert) Yasin Okumus - contribuitor
-- [dlee-nvisia](https://github.com/dlee-nvisia) Dave - contribuitor
+- [Sel-en-ium](https://github.com/Sel-en-ium) Sel-en-ium - contribuitor
 - [TSedlar](https://github.com/TSedlar) Tyler Sedlar - contribuitor
 - [rianadon](https://github.com/rianadon) rianadon - contribuitor
+- [khe817](https://github.com/khe817) Ngan Bui - contribuitor
+- [dlee-nvisia](https://github.com/dlee-nvisia) Dave - contribuitor
 - [llgcode](https://github.com/llgcode) llgcode - contribuitor
-- [khe817](khe817) Ngan Bui - contribuitor
 
 ## Source
 

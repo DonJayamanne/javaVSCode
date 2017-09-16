@@ -79,6 +79,7 @@ Inspect variables, set breakpoints and see output in console.
 * Can't use integrated terminal yet. [#71](https://github.com/DonJayamanne/javaVSCode/issues/71)
 * Sometimes debugger shows nothing, try to restart it. [#27](https://github.com/DonJayamanne/javaVSCode/issues/27)
 * Debugging Spring Boot Applications, [#13](https://github.com/DonJayamanne/javaVSCode/issues/13)
+* Debugging Android. To debug Android use [this extension](https://marketplace.visualstudio.com/items?itemName=adelphes.android-dev-ext) instead.
 
 ## Release Notes
 

@@ -1,28 +1,44 @@
 # Java Debugger
-Local variables, arguments, stack trace, step through, partial support for JavaFX, expanding values (Objects, Arrays) etc.
+
+![java-debugger](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/icon.png)
+
+Java debugger extension for VSCode with support for debugging Local variables, arguments, stack trace, step through, partial support for JavaFX, expanding values (Objects, Arrays) etc.
+
+## Requirements
+
+> NOTE: Path to JDK is configured in launch.json
+
+* JDK is installed (version 1.7.0 and later)
 
 Once installed, do remember to configure the JDK Path (in launch.json, else jdk path is assumed to be in the current path)
-Ensure to compile the source code with debug symbols.
 
-E.g. configure the tasks.json file as follows and use run the build task.
-(note: if there are no errors displayed in the 'Tasks' output window, then there are no errors)
+**Ensure to compile the source code with debug symbols.**
+
+Debug info is needed to compile your code with debugging support, allowing to see variables value
+
+![variables](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/variables.png)
+
+You can configure the `tasks.json` file as follows and use run the build task. see `-g` flag in command.
+
 ```json
 {
-    "version": "0.1.0",
-    "command": "javac",
-    "isShellCommand": true,
-    "showOutput": "always",
-    "isWatching": true,
-    "suppressTaskName": true,
+    "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "build",
-            "args": ["-g", "${file}"]
+            "taskName": "Compile Java",
+            "type": "shell",
+            "command": "javac -g ${file}",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
 ```
-Example launch configuration (launch.json):
+
+Then you need to add a launch configuration (`launch.json`):
+
 ```javascript
 {
     "name": "Java",
@@ -40,25 +56,53 @@ Example launch configuration (launch.json):
 }
 ```
 
-
-
-## [Issues and Feature Requests](https://github.com/DonJayamanne/javaVSCode/issues)
-* Enhancements to java debugger (pause and continue, etc)
-* Debugging of Multie Threaded apps is possible but very flaky. The debugger could at times hang.
-
 ![Image of Debugging](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/debug.gif)
+
+## Features
+
+Debug GUI applications.
+
 ![Image of JavaFx](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/javafx.gif)
+
+Inspect variables, set breakpoints and see output in console.
+
 ![Image of Loop](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/Loop.gif)
 
-## Requirements
-* JDK is installed (version 1.7.0 and later)
- + Path to jdk is configured in launch.json
+## Roadmap
+
+* Enhancements to java debugger (pause and continue, etc)
+* Debugging of Multie Threaded apps is possible but very flaky. The debugger could at times hang.
+* Exceptions support [#46](https://github.com/DonJayamanne/javaVSCode/issues/46)
+
+## Known issues
+
+* Can't use integrated terminal yet. [#71](https://github.com/DonJayamanne/javaVSCode/issues/71)
+* Sometimes debugger shows nothing, try to restart it. [#27](https://github.com/DonJayamanne/javaVSCode/issues/27)
+* Debugging Spring Boot Applications, [#13](https://github.com/DonJayamanne/javaVSCode/issues/13)
 
 ## Release Notes
 
 See [ChangeLog](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG.md)
 
-## Big thanks to [Faustino Aguilar](https://github.com/faustinoaq)
+## Contributing
+
+1. Fork it https://github.com/DonJayamanne/javaVSCode/fork
+2. Create your feature branch `git checkout -b my-new-feature`
+3. Commit your changes `git commit -am 'Add some feature'`
+4. Push to the branch `git push origin my-new-feature`
+5. Create a new Pull Request
+
+## Contributors
+
+- [DonJayamanne](https://github.com/DonJayamanne/) Don Jayamanne - creator, maintainer
+- [faustinoaq](https://github.com/faustinoaq) Faustino Aguilar - contribuitor
+- [lacivert](https://github.com/lacivert) Yasin Okumus - contribuitor
+- [Sel-en-ium](https://github.com/Sel-en-ium) Sel-en-ium - contribuitor
+- [TSedlar](https://github.com/TSedlar) Tyler Sedlar - contribuitor
+- [rianadon](https://github.com/rianadon) rianadon - contribuitor
+- [khe817](https://github.com/khe817) Ngan Bui - contribuitor
+- [dlee-nvisia](https://github.com/dlee-nvisia) Dave - contribuitor
+- [llgcode](https://github.com/llgcode) llgcode - contribuitor
 
 ## Source
 

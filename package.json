@@ -53,10 +53,10 @@
                 "default": "${fileBasename}"
               },
               "startupClassPathPattern": {
-								"type": "string",
-								"description": "When using VSCode's ${relativeFile}, it will default to src/main/java/${file}.java any paths after the pattern will be used to construct the classpath",
-								"default": "src/main/java/"
-							},
+                "type": "string",
+                "description": "When using VSCode's ${relativeFile}, it will default to src/main/java/${file}.java any paths after the pattern will be used to construct the classpath",
+                "default": "src/main/java/"
+              },
               "jdkPath": {
                 "type": "string",
                 "description": "Path JDK directory.",
@@ -130,10 +130,10 @@
                 "default": "${fileBasename}"
               },
               "startupClassPathPattern": {
-								"type": "string",
-								"description": "When using VSCode's ${relativeFile}, it will default to src/main/java/${file}.java Any directories in the path after the pattern will be used to construct the classpath",
-								"default": "src/main/java/"
-							},
+                "type": "string",
+                "description": "When using VSCode's ${relativeFile}, it will default to src/main/java/${file}.java Any directories in the path after the pattern will be used to construct the classpath",
+                "default": "src/main/java/"
+              },
               "jdkPath": {
                 "type": "string",
                 "description": "Path JDK directory.",

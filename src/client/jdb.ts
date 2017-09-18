@@ -89,11 +89,11 @@ export class JdbRunner extends EventEmitter {
         this.debugSession = debugSession;
         // if using VSCode's ${relativeFile}, it will default to src/main/java/${file}.java
         var startupClassMatch = args.startupClass.match(new RegExp(`${args.startupClassPathPattern}(.*)`));
-		if(startupClassMatch){
-			args.startupClass = startupClassMatch[1];
-			args.startupClass = args.startupClass.substring(0, args.startupClass.lastIndexOf('.java'));
-			args.startupClass = args.startupClass.replace(/\//g, '.');
-		}
+        if(startupClassMatch){
+            args.startupClass = startupClassMatch[1];
+            args.startupClass = args.startupClass.substring(0, args.startupClass.lastIndexOf('.java'));
+            args.startupClass = args.startupClass.replace(/\//g, '.');
+        }
         let ext = path.extname(args.startupClass);
         this.className = path.basename(args.startupClass, ext.toUpperCase() === ".JAVA" ? ext : "");
         this.jdbLoaded = new Promise<string>((resolve, reject) => {

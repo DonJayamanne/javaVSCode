@@ -45,14 +45,16 @@ Then you need to add a launch configuration (`launch.json`):
     "type": "java",
     "request": "launch",
     "stopOnEntry": true,
-    "preLaunchTask": "build",                 // Runs the task created above before running this configuration
-    "jdkPath": "${env:JAVA_HOME}/bin",        // You need to set JAVA_HOME enviroment variable
+    "preLaunchTask": "build",                     // Runs the task created above before running this configuration
+    "jdkPath": "${env:JAVA_HOME}/bin",            // You need to set JAVA_HOME enviroment variable
     "cwd": "${workspaceRoot}",
-    "startupClass": "my.package.MyMainClass", // The class you want to run
-    "sourcePath": ["${workspaceRoot}/src"],   // Indicates where your source (.java) files are
-    "classpath": ["${workspaceRoot}/bin"],    // Indicates the location of your .class files
-    "options": []                             // Additional options to pass to the java executable
-    "args": []                                // Command line arguments to pass to the startup class
+    "startupClass": "my.package.MyMainClass",     // The class you want to run
+    "startupClassPathPattern": "src/main/java/",  // A pattern that matches the begining of your src path any paths after
+                                                  // the pattern will be used to construct the classpath for your startupClass
+    "sourcePath": ["${workspaceRoot}/src"],       // Indicates where your source (.java) files are
+    "classpath": ["${workspaceRoot}/bin"],        // Indicates the location of your .class files
+    "options": []                                 // Additional options to pass to the java executable
+    "args": []                                    // Command line arguments to pass to the startup class
 }
 ```
 

@@ -73,14 +73,12 @@ Inspect variables, set breakpoints and see output in console.
 ## Roadmap
 
 * Enhancements to java debugger (pause and continue, etc)
-* Debugging of Multie Threaded apps is possible but very flaky. The debugger could at times hang.
+* Debugging of Multi Threaded apps is possible but very flaky. The debugger could at times hang.
 * Exceptions support [#46](https://github.com/DonJayamanne/javaVSCode/issues/46)
 
 ## Known issues
 
-* Can't use integrated terminal yet. [#71](https://github.com/DonJayamanne/javaVSCode/issues/71)
 * Sometimes debugger shows nothing, try to restart it. [#27](https://github.com/DonJayamanne/javaVSCode/issues/27)
-* Debugging Spring Boot Applications, [#13](https://github.com/DonJayamanne/javaVSCode/issues/13)
 * Debugging Android. To debug Android use [this extension](https://marketplace.visualstudio.com/items?itemName=adelphes.android-dev-ext) instead.
 
 ## Release Notes
@@ -95,10 +93,12 @@ See [ChangeLog](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG
 4. Push to the branch `git push origin my-new-feature`
 5. Create a new Pull Request
 
+## Big thanks to [Faustino Aguilar](https://github.com/faustinoaq)  
+
 ## Contributors
 
 - [DonJayamanne](https://github.com/DonJayamanne/) Don Jayamanne - creator, maintainer
-- [faustinoaq](https://github.com/faustinoaq) Faustino Aguilar - contribuitor
+- [faustinoaq](https://github.com/faustinoaq) Faustino Aguilar - maintainer, contribuitor
 - [lacivert](https://github.com/lacivert) Yasin Okumus - contribuitor
 - [Sel-en-ium](https://github.com/Sel-en-ium) Sel-en-ium - contribuitor
 - [TSedlar](https://github.com/TSedlar) Tyler Sedlar - contribuitor

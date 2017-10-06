@@ -1,4 +1,10 @@
-# Java Debugger
+# Java Debugger (Deprecated)
+
+This extension is no longer maintained. It has been deprecated in favor of [Java Debug Extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-debug)
+
+
+Big thanks to [Faustino Aguilar](https://github.com/faustinoaq) for his continued effort in maintaining this extension.
+
 
 ![java-debugger](https://raw.githubusercontent.com/DonJayamanne/javaVSCode/master/images/icon.png)
 
@@ -94,19 +100,6 @@ See [ChangeLog](https://github.com/DonJayamanne/javaVSCode/blob/master/CHANGELOG
 5. Create a new Pull Request
 
 ## Big thanks to [Faustino Aguilar](https://github.com/faustinoaq)  
-
-## Contributors
-
-- [DonJayamanne](https://github.com/DonJayamanne/) Don Jayamanne - creator, maintainer
-- [faustinoaq](https://github.com/faustinoaq) Faustino Aguilar - maintainer, contribuitor
-- [lacivert](https://github.com/lacivert) Yasin Okumus - contribuitor
-- [Sel-en-ium](https://github.com/Sel-en-ium) Sel-en-ium - contribuitor
-- [TSedlar](https://github.com/TSedlar) Tyler Sedlar - contribuitor
-- [rianadon](https://github.com/rianadon) rianadon - contribuitor
-- [khe817](https://github.com/khe817) Ngan Bui - contribuitor
-- [dlee-nvisia](https://github.com/dlee-nvisia) Dave - contribuitor
-- [llgcode](https://github.com/llgcode) llgcode - contribuitor
-
 ## Source
 
 [Github](https://github.com/DonJayamanne/javaVSCode)

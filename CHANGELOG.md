@@ -1,3 +1,6 @@
+### Version 0.1.5 (05 Oct 2017)
+Good bye
+
 ### Version 0.1.4 (24 Sept 2017)
 * Allow attaching to multi-threaded processes [#56](https://github.com/DonJayamanne/javaVSCode/pull/56)  
 * Adding sourcePath configuration setting when attaching [#64](https://github.com/DonJayamanne/javaVSCode/pull/64)  

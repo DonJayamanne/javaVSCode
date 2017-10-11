@@ -1,8 +1,8 @@
 {
   "name": "javadebugger",
-  "displayName": "Java Debugger",
-  "description": "Java Debugger (break points, variables, stack trace etc)",
-  "version": "0.1.5",
+  "displayName": "[deprecated] Java Debugger",
+  "description": "[deprecated] Java Debugger (break points, variables, stack trace etc)",
+  "version": "0.1.6",
   "publisher": "donjayamanne",
   "engines": {
     "vscode": "^1.9.0"
